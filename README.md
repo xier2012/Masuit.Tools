@@ -1,27 +1,47 @@
-﻿# Masuit.Tools
-包含一些常用的操作类，大都是静态类，加密解密，反射操作，硬件信息，字符串扩展方法，日期时间扩展操作，大文件拷贝，图像裁剪，验证码等常用封装。
-
+# Masuit.Tools
+[![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)   
+包含一些常用的操作类，大都是静态类，加密解密，反射操作，动态编译，权重随机筛选算法，简繁转换，分布式短id，表达式树，linq扩展，文件压缩，多线程下载和FTP客户端，硬件信息，字符串扩展方法，日期时间扩展操作，中国农历，大文件拷贝，图像裁剪，验证码，断点续传，实体映射、集合扩展等常用封装。  
 [官网教程](https://masuit.com/55)  
-项目开发模式：日常代码积累+网络搜集  
-本项目已得到[JetBrains](https://www.jetbrains.com/shop/eform/opensource)的支持！  
-<img src="https://www.jetbrains.com/shop/static/images/jetbrains-logo-inv.svg" height="100">  
-[![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)  
-请注意：一旦使用本开源项目以及引用了本项目或包含本项目代码的公司因为违反劳动法（包括但不限定非法裁员、超时用工、雇佣童工等）在任何法律诉讼中败诉的，项目作者有权利追讨本项目的使用费，或者直接不允许使用任何包含本项目的源代码！任何性质的`外包公司`或`996公司`需要使用本类库，请联系作者进行商业授权！其他企业或个人可随意使用不受限。
 
 ⭐⭐⭐喜欢这个项目的话就Star、Fork、Follow素质三连关♂注一下吧⭐⭐⭐  
+项目开发模式：日常代码积累+网络搜集  
+## 本项目已得到[JetBrains](https://www.jetbrains.com/shop/eform/opensource)的支持！  
+<img src="https://www.jetbrains.com/shop/static/images/jetbrains-logo-inv.svg" height="100">     
+
+## Stargazers over time  
+<img src="https://starchart.cc/ldqk/Masuit.Tools.svg">    
+
+## 请注意：
+一旦使用本开源项目以及引用了本项目或包含本项目代码的公司因为违反劳动法（包括但不限定非法裁员、超时用工、雇佣童工等）在任何法律诉讼中败诉的，项目作者有权利追讨本项目的使用费，或者直接不允许使用任何包含本项目的源代码！任何性质的`外包公司`或`996公司`需要使用本类库，请联系作者进行商业授权！其他企业或个人可随意使用不受限。
+
+## 建议开发环境
+操作系统：Windows 10 1903及以上版本  
+开发工具：VisualStudio2019 v16.5及以上版本  
+SDK：.Net Core 3.1.0及以上版本
+
 ## 安装程序包
 .NET Framework ≥4.6.1
 ```shell
 PM> Install-Package Masuit.Tools.Net
 ```
-.NET Core 3.x
+.NET Core 2.x/3.x
 ```shell
 PM> Install-Package Masuit.Tools.Core
+```
+## 为工具库注册配置
+工具库需要用到外部配置节：  
+1. EmailDomainWhiteList，邮箱校验需要用到的白名单域名，若未配置，则不启用邮箱校验白名单
+2. BaiduAK，获取IP/地理位置相关百度云APIKey，若未配置，则无法调用GetIPLocation以及GetPhysicalAddress相关方法
+```csharp
+public Startup(IConfiguration configuration)
+{
+    configuration.AddToMasuitTools(); // 若未调用，则默认自动尝试加载appsettings.json
+}
 ```
 ## 特色功能示例代码
 ### 1.检验字符串是否是Email、手机号、URL、IP地址、身份证号
 ```csharp
-bool isEmail="3444764617@qq.com".MatchEmail();
+bool isEmail="3444764617@qq.com".MatchEmail(); // 可在appsetting.json中添加EmailDomainWhiteList配置邮箱域名白名单，逗号分隔
 bool isInetAddress = "114.114.114.114".MatchInetAddress();
 bool isUrl = "http://masuit.com".MatchUrl();
 bool isPhoneNumber = "15205201520".MatchPhoneNumber();
@@ -74,6 +94,7 @@ string s = html.HtmlSantinizerStandard();//清理后：<div><span><a href="/user
 Windows.ClearMemorySilent();
 ```
 ### 6.任意进制转换
+可用于生成短id，短hash等操作，纯数学运算。
 ```csharp
 NumberFormater nf = new NumberFormater(36);//内置2-62进制的转换
 //NumberFormater nf = new NumberFormater("0123456789abcdefghijklmnopqrstuvwxyz");// 自定义进制字符，可用于生成验证码
@@ -83,7 +104,16 @@ Console.WriteLine("12345678的36进制是：" + s36); // 7clzi
 Console.WriteLine("36进制的7clzi是：" + num); // 12345678
 ```
 ```csharp
+//扩展方法形式调用
 var bin=12345678.ToBinary(36);//7clzi
+var num="7clzi".FromBinary(36);//12345678
+```
+```csharp
+//超大数字的进制转换
+var num = "E6186159D38CD50E0463A55E596336BD".FromBinaryBig(16);
+Console.WriteLine(num); // 十进制：305849028665645097422198928560410015421
+Console.WriteLine(num.ToBinary(64)); // 64进制：3C665pQUPl3whzFlVpoPqZ，22位长度
+Console.WriteLine(num.ToBinary(36)); // 36进制：dmed4dkd5bhcg4qdktklun0zh，25位长度
 ```
 ### 7.纳秒级性能计时器
 ```csharp
@@ -309,12 +339,15 @@ string s = enc.DesDecrypt("abcdefgh"); //DES密钥解密为明文
 RsaKey rsaKey = RsaCrypt.GenerateRsaKeys();// 生成RSA密钥对
 string encrypt = "123456".RSAEncrypt(rsaKey.PublicKey);// 公钥加密
 string s = encrypt.RSADecrypt(rsaKey.PrivateKey);// 私钥解密
+
+string s = "123".Crc32();// 生成crc32摘要
+string s = "123".Crc64();// 生成crc64摘要
 ```
 ### 20.实体校验
 ```csharp
 public class MyClass
 {
-    [IsEmail]
+    [IsEmail] //可在appsetting.json中添加EmailDomainWhiteList配置邮箱域名白名单，逗号分隔
     public string Email { get; set; }
 
     [IsPhone]
@@ -334,6 +367,7 @@ public class MyClass
 ```csharp
 List<string> srcs = "html".MatchImgSrcs().ToList();// 获取html字符串里所有的img标签的src属性
 var imgTags = "html".MatchImgTags();//获取html字符串里的所有的img标签
+var str="html".RemoveHtmlTag(); // 去除html标签
 ...
 ```
 ### 22.DateTime扩展
@@ -913,13 +947,79 @@ public override Post SavePost(Post t)
 "13123456789".Mask(); // 131****5678
 "admin@masuit.com".MaskEmail(); // a****n@masuit.com
 ```
+### 39.集合扩展
+```csharp
+var list = new List<string>()
+{
+    "1","3","3","3"
+};
+list.AddRangeIf(s => s.Length > 1, "1", "11"); // 将被添加元素中的长度大于1的元素添加到list
+list.AddRangeIfNotContains("1", "11"); // 将被添加元素中不包含的元素添加到list
+list.RemoveWhere(s => s.Length<1); // 将集合中长度小于1的元素移除
+list.InsertAfter(0, "2"); // 在第一个元素之后插入
+list.InsertAfter(s => s == "1", "2"); // 在元素"1"后插入
+var dic = list.ToDictionarySafety(s => s); // 安全的转换成字典类型，当键重复时只添加一个键
+var dic = list.ToConcurrentDictionary(s => s); // 转换成并发字典类型，当键重复时只添加一个键
+var dic = list.ToDictionarySafety(s => s, s => s.GetHashCode()); // 安全的转换成字典类型，当键重复时只添加一个键
+dic.AddOrUpdate("4", 4); // 添加或更新键值对
+dic.AddOrUpdate(new Dictionary<string, int>()
+{
+    ["5"] = 5,["55"]=555
+}); // 批量添加或更新键值对
+dic.AddOrUpdate("5", 6, (s, i) => 66); // 如果是添加，则值为6，若更新则值为66
+dic.AddOrUpdate("5", 6, 666); // 如果是添加，则值为6，若更新则值为666
+dic.AsConcurrentDictionary(); // 普通字典转换成并发字典集合
+var table=list.ToDataTable(); // 转换成DataTable类型
+table.AddIdentityColumn(); //给DataTable增加一个自增列
+table.HasRows(); // 检查DataTable 是否有数据行
+table.ToList<T>(); // datatable转List
+var set = list.ToHashSet(s=>s.Name);// 转HashSet
+```
+### 40.Mime类型
+```csharp
+var mimeMapper = new MimeMapper();
+var mime = mimeMapper.GetExtensionFromMime("image/jpeg"); // .jpg
+var ext = mimeMapper.GetMimeFromExtension(".jpg"); // image/jpeg
+```
+### 41.日期时间扩展
+```csharp
+DateTime.Now.GetTotalSeconds(); // 获取该时间相对于1970-01-01 00:00:00的秒数
+DateTime.Now.GetTotalMilliseconds(); // 获取该时间相对于1970-01-01 00:00:00的毫秒数
+DateTime.Now.GetTotalMicroseconds(); // 获取该时间相对于1970-01-01 00:00:00的微秒数
+DateTime.Now.GetTotalNanoseconds(); // 获取该时间相对于1970-01-01 00:00:00的纳秒数
+var indate=DateTime.Parse("2020-8-3").In(DateTime.Parse("2020-8-2"),DateTime.Parse("2020-8-4"));//true
+
+//时间段计算工具
+var range = new DateTimeRange(DateTime.Parse("2020-8-3"), DateTime.Parse("2020-8-5"));
+range.Union(DateTime.Parse("2020-8-4"), DateTime.Parse("2020-8-6")); //连接两个时间段，结果：2020-8-3~2020-8-6
+range.In(DateTime.Parse("2020-8-3"), DateTime.Parse("2020-8-6"));//判断是否在某个时间段内，true
+var (intersected,range2) = range.Intersect(DateTime.Parse("2020-8-4"), DateTime.Parse("2020-8-6"));//两个时间段是否相交，(true,2020-8-3~2020-8-4)
+range.Contains(DateTime.Parse("2020-8-3"), DateTime.Parse("2020-8-4"));//判断是否包含某个时间段，true
+...
+```
+### 42.流转换
+```csharp
+stream.SaveAsMemoryStream(); // 任意流转换成内存流
+stream.ToArray(); // 任意流转换成二进制数组
+```
+### 43.数值转换
+```csharp
+1.2345678901.Digits8(); // 将小数截断为8位
+1.23.To<int>(); // 小数转int
+1.23.To<T>(); // 小数转T基本类型
+```
+### 44.简繁转换
+```csharp
+var str="个体".ToTraditional(); // 转繁体
+var str="個體".ToSimplified(); // 转简体
+```
 
 # Asp.Net MVC和Asp.Net Core的支持断点续传和多线程下载的ResumeFileResult
 
 允许你在ASP.NET Core中通过MVC/WebAPI应用程序传输文件数据时使用断点续传以及多线程下载。
 
 它允许提供`ETag`标题以及`Last-Modified`标题。 它还支持以下前置条件标题：`If-Match`，`If-None-Match`，`If-Modified-Since`，`If-Unmodified-Since`，`If-Range`。
-## 支持 ASP.NET Core 2.0
+## 支持 ASP.NET Core 2.0+
 从.NET Core2.0开始，ASP.NET Core内部支持断点续传。 因此只是对FileResult做了一些扩展。 只留下了“Content-Disposition” Inline的一部分。 所有代码都依赖于基础.NET类。
 
 ## 如何使用 
@@ -1104,7 +1204,4 @@ public IActionResult VirtualFile(bool fileName)
 
 开源博客系统：[Masuit.MyBlogs](https://github.com/ldqk/Masuit.MyBlogs "Masuit.MyBlogs")
 ### 友情赞助
-|支付宝|微信收款码|QQ转账|
-|---|--|---|
-|![支付宝](https://git.imweb.io/ldqk/imgbed/raw/master/20190810/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20190810204128.png)|![微信](https://git.imweb.io/ldqk/imgbed/raw/master/2018/2/5ccadc6b53f28.jpg)|![QQ](https://git.imweb.io/ldqk/imgbed/raw/master/2018/2/5ccadc6c9aa5b.jpg)|
-
+![打赏支持](https://ae01.alicdn.com/kf/H9c0ef439b7ae4a5ba4151456f3c5f0a2N.jpg)

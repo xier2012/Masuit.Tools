@@ -19,7 +19,15 @@
     <PackageId>Masuit.Tools.NoSQL.MongoDBClient</PackageId>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <LangVersion>8.0</LangVersion>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <CodeAnalysisRuleSet />
@@ -30,9 +38,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MongoDB.Bson" Version="2.10.3" />
-    <PackageReference Include="MongoDB.Driver" Version="2.10.3" />
-    <PackageReference Include="MongoDB.Driver.Core" Version="2.10.3" />
+    <PackageReference Include="MongoDB.Bson" Version="2.11.1" />
+    <PackageReference Include="MongoDB.Driver" Version="2.11.1" />
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.11.1" />
   </ItemGroup>
 
 </Project>
