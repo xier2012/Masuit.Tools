@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Masuit.Tools.Systems;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -112,6 +113,11 @@ namespace Masuit.Tools.Net
         public event EventHandler TotalProgressChanged;
 
         /// <summary>
+        /// 文件合并完成事件
+        /// </summary>
+        public event EventHandler FileMergedComplete;
+
+        /// <summary>
         /// 文件合并事件
         /// </summary>
         public event FileMergeProgressChangedEventHandler FileMergeProgressChanged;
@@ -175,7 +181,7 @@ namespace Masuit.Tools.Net
                 return;
             }
 
-            OrderByRemaining(PartialDownloaderList);
+            PartialDownloaderList.Sort((x, y) => y.RemainingBytes - x.RemainingBytes);
             int rem = PartialDownloaderList[0].RemainingBytes;
             if (rem < 50 * 1024)
             {
@@ -238,7 +244,7 @@ namespace Masuit.Tools.Net
 
             for (int i = 0; i < NumberOfParts; i++)
             {
-                var temp = CreateNewPd(i, NumberOfParts, Size);
+                var temp = CreateNew(i, NumberOfParts, Size);
                 temp.DownloadPartProgressChanged += temp_DownloadPartProgressChanged;
                 temp.DownloadPartCompleted += temp_DownloadPartCompleted;
                 PartialDownloaderList.Add(temp);
@@ -248,26 +254,22 @@ namespace Masuit.Tools.Net
 
         void MergeParts()
         {
-            var mergeOrderedList = SortPDsByFrom(PartialDownloaderList);
+            var mergeOrderedList = PartialDownloaderList.OrderBy(x => x.From);
             var dir = new FileInfo(FilePath).DirectoryName;
-            if (!Directory.Exists(dir))
-            {
-                Directory.CreateDirectory(dir);
-            }
-
-            using var fs = new FileStream(FilePath, FileMode.Create, FileAccess.ReadWrite);
-            long totalBytesWritten = 0;
+            Directory.CreateDirectory(dir);
+            using var fs = File.OpenWrite(FilePath);
+            long totalBytesWrite = 0;
             int mergeProgress = 0;
             foreach (var item in mergeOrderedList)
             {
-                using var pds = new FileStream(item.FullPath, FileMode.Open, FileAccess.Read);
+                using var pdi = File.OpenRead(item.FullPath);
                 byte[] buffer = new byte[4096];
                 int read;
-                while ((read = pds.Read(buffer, 0, buffer.Length)) > 0)
+                while ((read = pdi.Read(buffer, 0, buffer.Length)) > 0)
                 {
                     fs.Write(buffer, 0, read);
-                    totalBytesWritten += read;
-                    int temp = (int)(totalBytesWritten * 1d / Size * 100);
+                    totalBytesWrite += read;
+                    int temp = (int)(totalBytesWrite * 1d / Size * 100);
                     if (temp != mergeProgress && FileMergeProgressChanged != null)
                     {
                         mergeProgress = temp;
@@ -284,16 +286,21 @@ namespace Masuit.Tools.Net
                     // ignored
                 }
             }
+
+            if (FileMergedComplete != null)
+            {
+                _aop.Post(state => FileMergedComplete(state, EventArgs.Empty), this);
+            }
         }
 
-        PartialDownloader CreateNewPd(int order, int parts, long contentLength)
+        PartialDownloader CreateNew(int order, int parts, long contentLength)
         {
             int division = (int)contentLength / parts;
             int remaining = (int)contentLength % parts;
             int start = division * order;
             int end = start + division - 1;
-            end += (order == parts - 1) ? remaining : 0;
-            return new PartialDownloader(_url, TempFileDirectory, Guid.NewGuid().ToString(), start, end, true);
+            end += order == parts - 1 ? remaining : 0;
+            return new PartialDownloader(_url, TempFileDirectory, SnowFlake.NewId, start, end, true);
         }
 
         /// <summary>
@@ -314,48 +321,6 @@ namespace Masuit.Tools.Net
                     item.ResumeAfterWait();
                 }
             }
-        }
-
-        /// <summary>
-        /// 冒泡排序
-        /// </summary>
-        /// <param name="list"></param>
-        private static void BubbleSort(List<PartialDownloader> list)
-        {
-            bool switched = true;
-            while (switched)
-            {
-                switched = false;
-                for (int i = 0; i < list.Count - 1; i++)
-                {
-                    if (list[i].RemainingBytes < list[i + 1].RemainingBytes)
-                    {
-                        PartialDownloader temp = list[i];
-                        list[i] = list[i + 1];
-                        list[i + 1] = temp;
-                        switched = true;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Sorts the downloader by From property to merge the parts
-        /// </summary>
-        /// <param name="list"></param>
-        /// <returns></returns>
-        public static List<PartialDownloader> SortPDsByFrom(List<PartialDownloader> list)
-        {
-            return list.OrderBy(x => x.From).ToList();
-        }
-
-        /// <summary>
-        /// 按剩余时间排序
-        /// </summary>
-        /// <param name="list"></param>
-        public static void OrderByRemaining(List<PartialDownloader> list)
-        {
-            BubbleSort(list);
         }
 
         /// <summary>

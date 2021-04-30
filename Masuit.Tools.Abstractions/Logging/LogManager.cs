@@ -190,7 +190,7 @@ namespace Masuit.Tools.Logging
         /// <param name="error">异常对象</param>
         public static void Error(Exception error)
         {
-            LogQueue.Enqueue(new Tuple<string, string>(GetLogPath(), $"{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(error).ToUpper()}   {error.Source}  {error.Message}{Environment.NewLine}{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(error).ToUpper()}   {error.Source}  {error.StackTrace}"));
+            LogQueue.Enqueue(new Tuple<string, string>(GetLogPath(), $"{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(error).ToUpper()}   {error.Source}  {error.Message}{Environment.NewLine}{error.StackTrace}"));
             LogInfo log = new LogInfo()
             {
                 LogLevel = LogLevel.Error,
@@ -211,7 +211,7 @@ namespace Masuit.Tools.Logging
         /// <param name="error">异常对象</param>
         public static void Error(Type source, Exception error)
         {
-            LogQueue.Enqueue(new Tuple<string, string>(GetLogPath(), $"{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(error).ToUpper()}   {source.FullName}  {error.Message}{Environment.NewLine}{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(error).ToUpper()}   {source.FullName}  {error.StackTrace}"));
+            LogQueue.Enqueue(new Tuple<string, string>(GetLogPath(), $"{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(error).ToUpper()}   {source.FullName}  {error.Message}{Environment.NewLine}{error.StackTrace}"));
             LogInfo log = new LogInfo()
             {
                 LogLevel = LogLevel.Error,
@@ -253,7 +253,7 @@ namespace Masuit.Tools.Logging
         /// <param name="error">异常对象</param>
         public static void Error(string source, Exception error)
         {
-            LogQueue.Enqueue(new Tuple<string, string>(GetLogPath(), $"{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(error).ToUpper()}   {source}  {error.Message}{Environment.NewLine}{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(error).ToUpper()}   {source}  {error.StackTrace}"));
+            LogQueue.Enqueue(new Tuple<string, string>(GetLogPath(), $"{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(error).ToUpper()}   {source}  {error.Message}{Environment.NewLine}{error.StackTrace}"));
             LogInfo log = new LogInfo()
             {
                 LogLevel = LogLevel.Error,
@@ -294,7 +294,7 @@ namespace Masuit.Tools.Logging
         /// <param name="fatal">异常对象</param>
         public static void Fatal(Exception fatal)
         {
-            LogQueue.Enqueue(new Tuple<string, string>(GetLogPath(), $"{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(fatal).ToUpper()}   {fatal.Source}  {fatal.Message}{Environment.NewLine}{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(fatal).ToUpper()}   {fatal.Source}  {fatal.StackTrace}"));
+            LogQueue.Enqueue(new Tuple<string, string>(GetLogPath(), $"{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(fatal).ToUpper()}   {fatal.Source}  {fatal.Message}{Environment.NewLine}{fatal.StackTrace}"));
             LogInfo log = new LogInfo()
             {
                 LogLevel = LogLevel.Fatal,
@@ -315,7 +315,7 @@ namespace Masuit.Tools.Logging
         /// <param name="fatal">异常对象</param>
         public static void Fatal(Type source, Exception fatal)
         {
-            LogQueue.Enqueue(new Tuple<string, string>(GetLogPath(), $"{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(fatal).ToUpper()}   {source.FullName}  {fatal.Message}{Environment.NewLine}{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(fatal).ToUpper()}   {source.FullName}  {fatal.StackTrace}"));
+            LogQueue.Enqueue(new Tuple<string, string>(GetLogPath(), $"{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(fatal).ToUpper()}   {source.FullName}  {fatal.Message}{Environment.NewLine}{fatal.StackTrace}"));
             LogInfo log = new LogInfo()
             {
                 LogLevel = LogLevel.Fatal,
@@ -357,7 +357,7 @@ namespace Masuit.Tools.Logging
         /// <param name="fatal">异常对象</param>
         public static void Fatal(string source, Exception fatal)
         {
-            LogQueue.Enqueue(new Tuple<string, string>(GetLogPath(), $"{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(fatal).ToUpper()}   {source}  {fatal.Message}{Environment.NewLine}{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(fatal).ToUpper()}   {source}  {fatal.StackTrace}"));
+            LogQueue.Enqueue(new Tuple<string, string>(GetLogPath(), $"{Now}   [{Thread.CurrentThread.ManagedThreadId}]   {nameof(fatal).ToUpper()}   {source}  {fatal.Message}{Environment.NewLine}{fatal.StackTrace}"));
             LogInfo log = new LogInfo()
             {
                 LogLevel = LogLevel.Fatal,
@@ -394,12 +394,8 @@ namespace Masuit.Tools.Logging
         private static string GetLogPath()
         {
             string newFilePath;
-            String logDir = string.IsNullOrEmpty(LogDirectory) ? Path.Combine(Environment.CurrentDirectory, "logs") : LogDirectory;
-            if (!Directory.Exists(logDir))
-            {
-                Directory.CreateDirectory(logDir);
-            }
-
+            var logDir = string.IsNullOrEmpty(LogDirectory) ? Path.Combine(Environment.CurrentDirectory, "logs") : LogDirectory;
+            Directory.CreateDirectory(logDir);
             string extension = ".log";
             string fileNameNotExt = Now.ToString("yyyyMMdd");
             string fileNamePattern = string.Concat(fileNameNotExt, "(*)", extension);
@@ -411,10 +407,10 @@ namespace Masuit.Tools.Logging
                 string lastFilePath = filePaths.Where(d => d.Length == fileMaxLen).OrderByDescending(d => d).FirstOrDefault();
                 if (new FileInfo(lastFilePath).Length > 1 * 1024 * 1024)
                 {
-                    string no = new Regex(@"(?is)(?<=\()(.*)(?=\))").Match(Path.GetFileName(lastFilePath)).Value;
-                    bool parse = int.TryParse(no, out int tempno);
-                    string formatno = $"({(parse ? (tempno + 1) : tempno)})";
-                    string newFileName = String.Concat(fileNameNotExt, formatno, extension);
+                    var no = new Regex(@"(?is)(?<=\()(.*)(?=\))").Match(Path.GetFileName(lastFilePath)).Value;
+                    var parse = int.TryParse(no, out int tempno);
+                    var formatno = $"({(parse ? (tempno + 1) : tempno)})";
+                    var newFileName = String.Concat(fileNameNotExt, formatno, extension);
                     newFilePath = Path.Combine(logDir, newFileName);
                 }
                 else
@@ -424,7 +420,7 @@ namespace Masuit.Tools.Logging
             }
             else
             {
-                string newFileName = string.Concat(fileNameNotExt, $"({0})", extension);
+                var newFileName = string.Concat(fileNameNotExt, $"({0})", extension);
                 newFilePath = Path.Combine(logDir, newFileName);
             }
 

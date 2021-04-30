@@ -46,20 +46,15 @@ namespace Masuit.Tools.Linq
             Expression body = Expression.MakeBinary(expressionType, left.Body, visitor.Visit(right.Body));
             return Expression.Lambda<Func<T, bool>>(body, left.Parameters[0]);
         }
+    }
 
-        private static bool IsExpressionBodyConstant<T>(Expression<Func<T, bool>> left)
+    internal class SubstituteParameterVisitor : ExpressionVisitor
+    {
+        public Dictionary<Expression, Expression> Sub = new Dictionary<Expression, Expression>();
+
+        protected override Expression VisitParameter(ParameterExpression node)
         {
-            return left.Body.NodeType == ExpressionType.Constant;
-        }
-
-        internal class SubstituteParameterVisitor : ExpressionVisitor
-        {
-            public Dictionary<Expression, Expression> Sub = new Dictionary<Expression, Expression>();
-
-            protected override Expression VisitParameter(ParameterExpression node)
-            {
-                return Sub.TryGetValue(node, out var newValue) ? newValue : node;
-            }
+            return Sub.TryGetValue(node, out var newValue) ? newValue : node;
         }
     }
 }

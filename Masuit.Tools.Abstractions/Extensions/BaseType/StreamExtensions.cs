@@ -1,4 +1,11 @@
 ﻿using System.IO;
+#if NET5_0
+using System;
+using System.Buffers;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+#endif
 
 namespace Masuit.Tools
 {
@@ -30,5 +37,22 @@ namespace Masuit.Tools
             stream.Seek(0, SeekOrigin.Begin);
             return bytes;
         }
+
+#if NET5_0
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task<byte[]> ToArrayAsync(this Stream stream, CancellationToken cancellationToken = default)
+        {
+            stream.Position = 0;
+            byte[] bytes = new byte[stream.Length];
+            await stream.ReadAsync(bytes, cancellationToken);
+            stream.Seek(0, SeekOrigin.Begin);
+            return bytes;
+        }
+#endif
     }
 }
