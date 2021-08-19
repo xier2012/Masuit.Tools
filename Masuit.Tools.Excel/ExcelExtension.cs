@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Masuit.Tools.Excel
@@ -21,18 +22,16 @@ namespace Masuit.Tools.Excel
         /// <param name="sheetTables">sheet名和内存表的映射</param>
         /// <param name="password">密码</param>
         /// <returns>内存流</returns>
-        public static MemoryStream DataTableToExcel(this Dictionary<string, DataTable> sheetTables, string password = null)
+        public static MemoryStream ToExcel(this Dictionary<string, DataTable> sheetTables, string password = null, ColumnSettings settings = null)
         {
-            using (var pkg = new ExcelPackage())
+            using var pkg = new ExcelPackage();
+            foreach (var pair in sheetTables)
             {
-                foreach (var pair in sheetTables)
-                {
-                    pair.Value.TableName = pair.Key;
-                    CreateWorksheet(pkg, pair.Value);
-                }
-
-                return SaveAsStream(pkg, password);
+                pair.Value.TableName = pair.Key;
+                CreateWorksheet(pkg, pair.Value, settings);
             }
+
+            return SaveAsStream(pkg, password);
         }
 
         /// <summary>
@@ -41,12 +40,12 @@ namespace Masuit.Tools.Excel
         /// <param name="tables">内存表</param>
         /// <param name="password">密码</param>
         /// <returns>内存流</returns>
-        public static MemoryStream DataTableToExcel(this List<DataTable> tables, string password = null)
+        public static MemoryStream ToExcel(this List<DataTable> tables, string password = null, ColumnSettings settings = null)
         {
             using var pkg = new ExcelPackage();
             foreach (var table in tables)
             {
-                CreateWorksheet(pkg, table);
+                CreateWorksheet(pkg, table, settings);
             }
 
             return SaveAsStream(pkg, password);
@@ -58,10 +57,10 @@ namespace Masuit.Tools.Excel
         /// <param name="table">内存表</param>
         /// <param name="password">密码</param>
         /// <returns>内存流</returns>
-        public static MemoryStream ToExcel(this DataTable table, string password = null)
+        public static MemoryStream ToExcel(this DataTable table, string password = null, ColumnSettings settings = null)
         {
             using var pkg = new ExcelPackage();
-            CreateWorksheet(pkg, table);
+            CreateWorksheet(pkg, table, settings);
             return SaveAsStream(pkg, password);
         }
 
@@ -80,7 +79,7 @@ namespace Masuit.Tools.Excel
             return ms;
         }
 
-        public static void CreateWorksheet(this ExcelPackage pkg, DataTable table)
+        public static void CreateWorksheet(this ExcelPackage pkg, DataTable table, ColumnSettings settings = null)
         {
             if (string.IsNullOrEmpty(table.TableName))
             {
@@ -103,6 +102,13 @@ namespace Masuit.Tools.Excel
             sheet.Row(1).CustomHeight = true; // 自动调整行高
             sheet.Cells.AutoFitColumns(); // 表头自适应列宽
             sheet.Cells.Style.WrapText = true;
+            if (settings != null)
+            {
+                foreach (var x in settings.ColumnTypes)
+                {
+                    sheet.Column(x.Key).Style.Numberformat.Format = x.Value;
+                }
+            }
 
             // 填充内容
             for (var i = 0; i < table.Rows.Count; i++)
@@ -113,46 +119,149 @@ namespace Masuit.Tools.Excel
                     switch (table.Rows[i][j])
                     {
                         case Stream s:
-                        {
-                            if (s.Length > 0)
                             {
-                                using var img = Image.FromStream(s);
-                                using var bmp = new Bitmap(img);
-                                bmp.SetResolution(96, 96);
-                                using var picture = sheet.Drawings.AddPicture(Guid.NewGuid().ToString(), bmp);
-                                picture.SetPosition(i + 1, 3, j, 5); //设置图片显示位置
-                                sheet.Row(i + 2).Height = bmp.Height > 24 ? bmp.Height : 24;
-                                sheet.Column(j + 1).Width = bmp.Width > 32 ? bmp.Width : 32;
+                                if (s.Length > 2)
+                                {
+                                    using var bmp = new Bitmap(s);
+                                    bmp.SetResolution(96, 96);
+                                    var picture = sheet.Drawings.AddPicture(Guid.NewGuid().ToString(), bmp);
+                                    picture.SetPosition(i + 1, 3, j, 5); //设置图片显示位置
+                                    var percent = 11000f / bmp.Height;
+                                    picture.SetSize((int)percent);
+                                    sheet.Row(i + 2).Height = 90;
+                                    sheet.Column(j + 1).Width = Math.Max(sheet.Column(j + 1).Width, bmp.Width * percent / 600 > 32 ? bmp.Width * percent / 600 : 32);
+                                }
+
+                                break;
                             }
 
-                            break;
-                        }
                         case Bitmap bmp:
-                        {
-                            if (bmp.Width + bmp.Height > 2)
                             {
-                                bmp.SetResolution(96, 96);
-                                using var picture = sheet.Drawings.AddPicture(Guid.NewGuid().ToString(), bmp);
-                                picture.SetPosition(i + 1, 3, j, 5); //设置图片显示位置
-                                sheet.Row(i + 2).Height = bmp.Height > 24 ? bmp.Height : 24;
-                                sheet.Column(j + 1).Width = bmp.Width > 32 ? bmp.Width : 32;
+                                if (bmp.Width + bmp.Height > 4)
+                                {
+                                    bmp.SetResolution(96, 96);
+                                    var picture = sheet.Drawings.AddPicture(Guid.NewGuid().ToString(), bmp);
+                                    picture.SetPosition(i + 1, 3, j, 5); //设置图片显示位置
+                                    var percent = 11000f / bmp.Height;
+                                    picture.SetSize((int)percent);
+                                    sheet.Row(i + 2).Height = 90;
+                                    sheet.Column(j + 1).Width = Math.Max(sheet.Column(j + 1).Width, bmp.Width * percent / 600 > 32 ? bmp.Width * percent / 600 : 32);
+                                }
+
+                                break;
                             }
 
-                            break;
-                        }
+                        case IEnumerable<Stream> streams:
+                            {
+                                double sumWidth = 0;
+                                foreach (var stream in streams.Where(stream => stream.Length > 2))
+                                {
+                                    using var bmp = new Bitmap(stream);
+                                    bmp.SetResolution(96, 96);
+                                    var picture = sheet.Drawings.AddPicture(Guid.NewGuid().ToString(), bmp);
+                                    picture.SetPosition(i + 1, 3, j, (int)(5 + sumWidth)); //设置图片显示位置
+                                    var percent = 11000f / bmp.Height;
+                                    picture.SetSize((int)percent);
+                                    sheet.Row(i + 2).Height = 90;
+                                    sumWidth += bmp.Width * 1.0 * percent / 100 + 5;
+                                    sheet.Column(j + 1).Width = Math.Max(sheet.Column(j + 1).Width, sumWidth / 6 > 32 ? sumWidth / 6 : 32);
+                                }
+
+                                break;
+                            }
+
+                        case IEnumerable<Bitmap> bmps:
+                            {
+                                double sumWidth = 0;
+                                foreach (var bmp in bmps.Where(stream => stream.Width + stream.Height > 4))
+                                {
+                                    bmp.SetResolution(96, 96);
+                                    var picture = sheet.Drawings.AddPicture(Guid.NewGuid().ToString(), bmp);
+                                    picture.SetPosition(i + 1, 3, j, (int)(5 + sumWidth)); //设置图片显示位置
+                                    var percent = 11000f / bmp.Height;
+                                    picture.SetSize((int)percent);
+                                    sheet.Row(i + 2).Height = 90;
+                                    sumWidth += bmp.Width * 1.0 * percent / 100 + 5;
+                                    sheet.Column(j + 1).Width = Math.Max(sheet.Column(j + 1).Width, sumWidth / 6 > 32 ? sumWidth / 6 : 32);
+                                }
+
+                                break;
+                            }
+
+                        case IDictionary<string, Stream> dic:
+                            {
+                                double sumWidth = 0;
+                                foreach (var kv in dic.Where(kv => kv.Value.Length > 2))
+                                {
+                                    using var bmp = new Bitmap(kv.Value);
+                                    bmp.SetResolution(96, 96);
+                                    var picture = sheet.Drawings.AddPicture(Guid.NewGuid().ToString(), bmp, new Uri(kv.Key));
+                                    picture.SetPosition(i + 1, 3, j, (int)(5 + sumWidth)); //设置图片显示位置
+                                    var percent = 11000f / bmp.Height;
+                                    picture.SetSize((int)percent);
+                                    sheet.Row(i + 2).Height = 90;
+                                    sumWidth += bmp.Width * 1.0 * percent / 100 + 5;
+                                    sheet.Column(j + 1).Width = Math.Max(sheet.Column(j + 1).Width, sumWidth / 6 > 32 ? sumWidth / 6 : 32);
+                                }
+
+                                break;
+                            }
+
+                        case IDictionary<string, MemoryStream> dic:
+                            {
+                                double sumWidth = 0;
+                                foreach (var kv in dic.Where(kv => kv.Value.Length > 2))
+                                {
+                                    using var bmp = new Bitmap(kv.Value);
+                                    bmp.SetResolution(96, 96);
+                                    var picture = sheet.Drawings.AddPicture(Guid.NewGuid().ToString(), bmp, new Uri(kv.Key));
+                                    picture.SetPosition(i + 1, 3, j, (int)(5 + sumWidth)); //设置图片显示位置
+                                    var percent = 11000f / bmp.Height;
+                                    picture.SetSize((int)percent);
+                                    sheet.Row(i + 2).Height = 90;
+                                    sumWidth += bmp.Width * 1.0 * percent / 100 + 5;
+                                    sheet.Column(j + 1).Width = Math.Max(sheet.Column(j + 1).Width, sumWidth / 6 > 32 ? sumWidth / 6 : 32);
+                                }
+
+                                break;
+                            }
+
+                        case IDictionary<string, Bitmap> bmps:
+                            {
+                                double sumWidth = 0;
+                                foreach (var kv in bmps.Where(kv => kv.Value.Width + kv.Value.Height > 4))
+                                {
+                                    kv.Value.SetResolution(96, 96);
+                                    var picture = sheet.Drawings.AddPicture(Guid.NewGuid().ToString(), kv.Value, new Uri(kv.Key));
+                                    picture.SetPosition(i + 1, 3, j, (int)(5 + sumWidth)); //设置图片显示位置
+                                    var percent = 11000f / kv.Value.Height;
+                                    picture.SetSize((int)percent);
+                                    sheet.Row(i + 2).Height = 90;
+                                    sumWidth += kv.Value.Width * 1.0 * percent / 100 + 5;
+                                    sheet.Column(j + 1).Width = Math.Max(sheet.Column(j + 1).Width, sumWidth / 6 > 32 ? sumWidth / 6 : 32);
+                                }
+
+                                break;
+                            }
+
                         default:
-                        {
-                            sheet.SetValue(i + 2, j + 1, table.Rows[i][j] ?? "");
-
-                            // 根据单元格内容长度来自适应调整列宽
-                            maxWidth[j] = Math.Max(Encoding.UTF8.GetBytes(table.Rows[i][j].ToString() ?? string.Empty).Length, maxWidth[j]);
-                            if (sheet.Column(j + 1).Width < maxWidth[j])
                             {
-                                sheet.Cells[i + 2, j + 1].AutoFitColumns(18, 110); // 自适应最大列宽，最小18，最大110
+                                sheet.SetValue(i + 2, j + 1, table.Rows[i][j] ?? "");
+                                if (table.Rows[i][j] is ValueType)
+                                {
+                                    sheet.Column(j + 1).AutoFit();
+                                }
+                                else
+                                {
+                                    // 根据单元格内容长度来自适应调整列宽
+                                    sheet.Column(j + 1).Width = Math.Max(Encoding.UTF8.GetBytes(table.Rows[i][j].ToString() ?? string.Empty).Length + 2, sheet.Column(j + 1).Width);
+                                    if (sheet.Column(j + 1).Width > 110)
+                                    {
+                                        sheet.Column(j + 1).AutoFit(100, 110);
+                                    }
+                                }
+                                break;
                             }
-
-                            break;
-                        }
                     }
                 }
             }

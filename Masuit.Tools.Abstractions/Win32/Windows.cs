@@ -127,9 +127,9 @@ namespace Masuit.Tools.Win32
             {
                 return Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion")?.GetValue("ProductName").ToString();
             }
-            catch (Exception)
+            catch
             {
-                return "未能获取到操作系统版本，可能是当前程序无管理员权限，如果是web应用程序，请将应用程序池的高级设置中的进程模型下的标识设置为：LocalSystem；如果是普通桌面应用程序，请提升管理员权限后再操作。";
+                return Environment.OSVersion.VersionString;
             }
         }
     }
@@ -244,17 +244,17 @@ namespace Masuit.Tools.Win32
             try
             {
                 //获取硬盘ID
-                string hdid = Empty;
                 using var mc = new ManagementClass("Win32_DiskDrive");
-                foreach (ManagementObject mo in mc.GetInstances())
+                using var moc = mc.GetInstances();
+                foreach (ManagementObject o in moc)
                 {
-                    using (mo)
+                    using (o)
                     {
-                        hdid = (string)mo.Properties["Model"].Value;
+                        return (string)o.Properties["Model"].Value;
                     }
                 }
 
-                return hdid;
+                return Empty;
             }
             catch
             {
@@ -270,17 +270,17 @@ namespace Masuit.Tools.Win32
         {
             try
             {
-                string st = Empty;
                 using var mc = new ManagementClass("Win32_ComputerSystem");
-                foreach (ManagementObject mo in mc.GetInstances())
+                using var moc = mc.GetInstances();
+                foreach (ManagementObject o in moc)
                 {
-                    using (mo)
+                    using (o)
                     {
-                        st = mo["UserName"].ToString();
+                        return o["UserName"].ToString();
                     }
                 }
 
-                return st;
+                return Empty;
             }
             catch
             {
@@ -292,18 +292,17 @@ namespace Masuit.Tools.Win32
         {
             try
             {
-                string st = Empty;
                 using var mc = new ManagementClass("Win32_ComputerSystem");
-                foreach (var o in mc.GetInstances())
+                using var moc = mc.GetInstances();
+                foreach (ManagementObject o in moc)
                 {
                     using (o)
                     {
-                        var mo = (ManagementObject)o;
-                        st = mo["SystemType"].ToString();
+                        return o["SystemType"].ToString();
                     }
                 }
 
-                return st;
+                return Empty;
             }
             catch
             {
@@ -315,17 +314,17 @@ namespace Masuit.Tools.Win32
         {
             try
             {
-                string st = Empty;
                 using var mc = new ManagementClass("Win32_ComputerSystem");
                 using var moc = mc.GetInstances();
-                foreach (var o in moc)
+                foreach (ManagementObject o in moc)
                 {
-                    var mo = (ManagementObject)o;
-
-                    st = mo["TotalPhysicalMemory"].ToString();
+                    using (o)
+                    {
+                        return o["TotalPhysicalMemory"].ToString();
+                    }
                 }
 
-                return st;
+                return Empty;
             }
             catch
             {

@@ -84,6 +84,33 @@ namespace Masuit.Tools.Security
             return ret.ToString();
         }
 
+        /// <summary> 
+        /// 加密字符串
+        /// 加密密钥必须为8位
+        /// </summary> 
+        /// <param name="strText">被加密的字符串</param>
+        /// <param name="desKey"></param>
+        /// <param name="desIV"></param>
+        /// <returns>加密后的数据</returns> 
+        public static string DesEncrypt(this string strText, byte[] desKey, byte[] desIV)
+        {
+            StringBuilder ret = new StringBuilder();
+            using var des = new DESCryptoServiceProvider();
+            byte[] inputByteArray = Encoding.Default.GetBytes(strText);
+            des.Key = desKey;
+            des.IV = desIV;
+            MemoryStream ms = new MemoryStream();
+            using var cs = new CryptoStream(ms, des.CreateEncryptor(), CryptoStreamMode.Write);
+            cs.Write(inputByteArray, 0, inputByteArray.Length);
+            cs.FlushFinalBlock();
+            foreach (byte b in ms.ToArray())
+            {
+                ret.AppendFormat($"{b:X2}");
+            }
+
+            return ret.ToString();
+        }
+
         /// <summary>
         /// DES加密文件
         /// </summary>
@@ -111,6 +138,30 @@ namespace Masuit.Tools.Security
             long totlen = fin.Length;
             DES des = new DESCryptoServiceProvider();
             var encStream = new CryptoStream(fout, des.CreateEncryptor(byKey, iv), CryptoStreamMode.Write);
+            while (rdlen < totlen)
+            {
+                var len = fin.Read(bin, 0, 100);
+                encStream.Write(bin, 0, len);
+                rdlen += len;
+            }
+        }
+
+        /// <summary>
+        /// DES加密文件
+        /// </summary>
+        /// <param name="fin">文件输入流</param>
+        /// <param name="outFilePath">文件输出路径</param>
+        /// <param name="desKey"></param>
+        /// <param name="desIV"></param>
+        public static void DesEncrypt(this FileStream fin, string outFilePath, byte[] desKey, byte[] desIV)
+        {
+            using var fout = new FileStream(outFilePath, FileMode.OpenOrCreate, FileAccess.Write);
+            fout.SetLength(0);
+            byte[] bin = new byte[100];
+            long rdlen = 0;
+            long totlen = fin.Length;
+            DES des = new DESCryptoServiceProvider();
+            var encStream = new CryptoStream(fout, des.CreateEncryptor(desKey, desIV), CryptoStreamMode.Write);
             while (rdlen < totlen)
             {
                 var len = fin.Read(bin, 0, 100);
@@ -155,6 +206,30 @@ namespace Masuit.Tools.Security
         }
 
         /// <summary>
+        /// DES解密文件
+        /// </summary>
+        /// <param name="fin">输入文件流</param>
+        /// <param name="outFilePath">文件输出路径</param>
+        /// <param name="desKey"></param>
+        /// <param name="desIV"></param>
+        public static void DesDecrypt(this FileStream fin, string outFilePath, byte[] desKey, byte[] desIV)
+        {
+            using var fout = new FileStream(outFilePath, FileMode.OpenOrCreate, FileAccess.Write);
+            fout.SetLength(0);
+            byte[] bin = new byte[100];
+            long rdlen = 0;
+            long totlen = fin.Length;
+            using DES des = new DESCryptoServiceProvider();
+            var encStream = new CryptoStream(fout, des.CreateDecryptor(desKey, desIV), CryptoStreamMode.Write);
+            while (rdlen < totlen)
+            {
+                var len = fin.Read(bin, 0, 100);
+                encStream.Write(bin, 0, len);
+                rdlen += len;
+            }
+        }
+
+        /// <summary>
         ///     DES解密算法
         ///     密钥为8位
         /// </summary>
@@ -179,6 +254,33 @@ namespace Masuit.Tools.Security
 
             des.Key = Encoding.ASCII.GetBytes(sKey.Substring(0, 8));
             des.IV = Encoding.ASCII.GetBytes(sKey.Substring(0, 8));
+            using var cs = new CryptoStream(ms, des.CreateDecryptor(), CryptoStreamMode.Write);
+            cs.Write(inputByteArray, 0, inputByteArray.Length);
+            cs.FlushFinalBlock();
+            return Encoding.Default.GetString(ms.ToArray());
+        }
+
+        /// <summary>
+        ///     DES解密算法
+        ///     密钥为8位
+        /// </summary>
+        /// <param name="pToDecrypt">需要解密的字符串</param>
+        /// <param name="desKey"></param>
+        /// <param name="desIV"></param>
+        /// <returns>解密后的数据</returns>
+        public static string DesDecrypt(this string pToDecrypt, byte[] desKey, byte[] desIV)
+        {
+            var ms = new MemoryStream();
+            using var des = new DESCryptoServiceProvider();
+            var inputByteArray = new byte[pToDecrypt.Length / 2];
+            for (int x = 0; x < pToDecrypt.Length / 2; x++)
+            {
+                int i = Convert.ToInt32(pToDecrypt.Substring(x * 2, 2), 16);
+                inputByteArray[x] = (byte)i;
+            }
+
+            des.Key = desKey;
+            des.IV = desIV;
             using var cs = new CryptoStream(ms, des.CreateDecryptor(), CryptoStreamMode.Write);
             cs.Write(inputByteArray, 0, inputByteArray.Length);
             cs.FlushFinalBlock();
@@ -259,6 +361,25 @@ namespace Masuit.Tools.Security
         }
 
         /// <summary>
+        /// 对称加密算法AES RijndaelManaged加密(RijndaelManaged（AES）算法是块式加密算法)
+        /// </summary>
+        /// <param name="encryptString">待加密字符串</param>
+        /// <param name="encryptKey">加密密钥，须半角字符</param>
+        /// <returns>加密结果字符串</returns>
+        public static string AESEncrypt(this string encryptString, byte[] encryptKey)
+        {
+            using var rijndaelProvider = new RijndaelManaged
+            {
+                Key = encryptKey,
+                IV = Keys
+            };
+            using ICryptoTransform rijndaelEncrypt = rijndaelProvider.CreateEncryptor();
+            byte[] inputData = Encoding.UTF8.GetBytes(encryptString);
+            byte[] encryptedData = rijndaelEncrypt.TransformFinalBlock(inputData, 0, inputData.Length);
+            return Convert.ToBase64String(encryptedData);
+        }
+
+        /// <summary>
         /// 对称加密算法AES RijndaelManaged解密字符串
         /// </summary>
         /// <param name="decryptString">待解密的字符串</param>
@@ -283,6 +404,32 @@ namespace Masuit.Tools.Security
                 using var rijndaelProvider = new RijndaelManaged()
                 {
                     Key = Encoding.UTF8.GetBytes(decryptKey),
+                    IV = Keys
+                };
+                using ICryptoTransform rijndaelDecrypt = rijndaelProvider.CreateDecryptor();
+                byte[] inputData = Convert.FromBase64String(decryptString);
+                byte[] decryptedData = rijndaelDecrypt.TransformFinalBlock(inputData, 0, inputData.Length);
+                return Encoding.UTF8.GetString(decryptedData);
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// 对称加密算法AES RijndaelManaged解密字符串
+        /// </summary>
+        /// <param name="decryptString">待解密的字符串</param>
+        /// <param name="decryptKey">解密密钥,和加密密钥相同</param>
+        /// <returns>解密成功返回解密后的字符串,失败返回空</returns>
+        public static string AESDecrypt(this string decryptString, byte[] decryptKey)
+        {
+            try
+            {
+                using var rijndaelProvider = new RijndaelManaged()
+                {
+                    Key = decryptKey,
                     IV = Keys
                 };
                 using ICryptoTransform rijndaelDecrypt = rijndaelProvider.CreateDecryptor();
@@ -412,6 +559,23 @@ namespace Masuit.Tools.Security
         }
 
         /// <summary>
+        /// 加密文件流
+        /// </summary>
+        /// <param name="fs">需要加密的文件流</param>
+        /// <param name="decryptKey">加密密钥</param>
+        /// <returns>加密流</returns>
+        public static CryptoStream AESEncryptStrream(this FileStream fs, byte[] decryptKey)
+        {
+            using var rijndaelProvider = new RijndaelManaged()
+            {
+                Key = decryptKey,
+                IV = Keys
+            };
+            using var encrypto = rijndaelProvider.CreateEncryptor();
+            return new CryptoStream(fs, encrypto, CryptoStreamMode.Write);
+        }
+
+        /// <summary>
         /// 解密文件流
         /// </summary>
         /// <param name="fs">需要解密的文件流</param>
@@ -424,6 +588,23 @@ namespace Masuit.Tools.Security
             using var rijndaelProvider = new RijndaelManaged()
             {
                 Key = Encoding.UTF8.GetBytes(decryptKey),
+                IV = Keys
+            };
+            using var decrypto = rijndaelProvider.CreateDecryptor();
+            return new CryptoStream(fs, decrypto, CryptoStreamMode.Read);
+        }
+
+        /// <summary>
+        /// 解密文件流
+        /// </summary>
+        /// <param name="fs">需要解密的文件流</param>
+        /// <param name="decryptKey">解密密钥</param>
+        /// <returns>加密流</returns>
+        public static CryptoStream AESDecryptStream(this FileStream fs, byte[] decryptKey)
+        {
+            using var rijndaelProvider = new RijndaelManaged()
+            {
+                Key = decryptKey,
                 IV = Keys
             };
             using var decrypto = rijndaelProvider.CreateDecryptor();

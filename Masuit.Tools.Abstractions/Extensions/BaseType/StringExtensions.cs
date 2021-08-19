@@ -11,6 +11,7 @@ using System.Net.Sockets;
 using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Masuit.Tools
@@ -68,11 +69,11 @@ namespace Masuit.Tools
         /// 任意进制转十进制
         /// </summary>
         /// <param name="str"></param>
-        /// <param name="bin">进制</param>
+        /// <param name="base">进制</param>
         /// <returns></returns>
-        public static long FromBinary(this string str, int bin)
+        public static long FromBinary(this string str, byte @base)
         {
-            var nf = new NumberFormater(bin);
+            var nf = new NumberFormater(@base);
             return nf.FromString(str);
         }
 
@@ -80,11 +81,11 @@ namespace Masuit.Tools
         /// 任意进制转大数十进制
         /// </summary>
         /// <param name="str"></param>
-        /// <param name="bin">进制</param>
+        /// <param name="base">进制</param>
         /// <returns></returns>
-        public static BigInteger FromBinaryBig(this string str, int bin)
+        public static BigInteger FromBinaryBig(this string str, byte @base)
         {
-            var nf = new NumberFormater(bin);
+            var nf = new NumberFormater(@base);
             return nf.FromStringBig(str);
         }
 
@@ -187,7 +188,7 @@ namespace Masuit.Tools
             if (isMatch && valid)
             {
                 var nslookup = new LookupClient();
-                var task = nslookup.Query(s.Split('@')[1], QueryType.MX).Answers.MxRecords().SelectAsync(r => Dns.GetHostAddressesAsync(r.Exchange.Value).ContinueWith(t =>
+                var task = nslookup.QueryCache(s.Split('@')[1], QueryType.MX).Answers.MxRecords().SelectAsync(r => Dns.GetHostAddressesAsync(r.Exchange.Value).ContinueWith(t =>
                 {
                     if (t.IsCanceled || t.IsFaulted)
                     {
@@ -220,7 +221,8 @@ namespace Masuit.Tools
             if (isMatch && valid)
             {
                 var nslookup = new LookupClient();
-                var query = await nslookup.QueryAsync(s.Split('@')[1], QueryType.MX);
+                using var cts = new CancellationTokenSource(100);
+                var query = await nslookup.QueryAsync(s.Split('@')[1], QueryType.MX, cancellationToken: cts.Token);
                 var result = await query.Answers.MxRecords().SelectAsync(r => Dns.GetHostAddressesAsync(r.Exchange.Value).ContinueWith(t =>
                 {
                     if (t.IsCanceled || t.IsFaulted)
@@ -639,6 +641,17 @@ $", RegexOptions.IgnorePatternWhitespace | RegexOptions.IgnoreCase | RegexOption
                 isPatnumTrue = false;
             }
             return isPatnumTrue;
+        }
+
+        /// <summary>
+        /// 取字符串前{length}个字
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        public static string Take(this string s, int length)
+        {
+            return s.Length > length ? s.Substring(0, length) : s;
         }
     }
     #endregion

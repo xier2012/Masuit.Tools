@@ -1,10 +1,11 @@
 # Masuit.Tools
-[![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE) [![nuget](https://img.shields.io/nuget/v/Masuit.Tools.Core.svg)](https://www.nuget.org/packages/Masuit.Tools.Core) [![nuget](https://img.shields.io/nuget/dt/Masuit.Tools.Core.svg)](https://www.nuget.org/packages/Masuit.Tools.Core) <a href="https://gitee.com/masuit/Masuit.Tools"><img src="https://gitee.com/static/images/logo-black.svg" height="24"></a> <a href="https://github.com/ldqk/Masuit.Tools"><img src="https://p.pstatp.com/origin/13841000102b8e2ba20b2" height="24"></a>  
-包含一些常用的操作类，大都是静态类，加密解密，反射操作，动态编译，权重随机筛选算法，简繁转换，分布式短id，表达式树，linq扩展，文件压缩，多线程下载和FTP客户端，硬件信息，字符串扩展方法，日期时间扩展操作，中国农历，大文件拷贝，图像裁剪，验证码，断点续传，实体映射、集合扩展等常用封装。  
+[![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE) [![nuget](https://img.shields.io/nuget/v/Masuit.Tools.Core.svg)](https://www.nuget.org/packages/Masuit.Tools.Core) [![nuget](https://img.shields.io/nuget/dt/Masuit.Tools.Core.svg)](https://www.nuget.org/packages/Masuit.Tools.Core) ![codeSize](https://img.shields.io/github/languages/code-size/ldqk/Masuit.Tools.svg) ![language](https://img.shields.io/github/languages/top/ldqk/Masuit.Tools.svg) <a href="https://gitee.com/masuit/Masuit.Tools"><img src="https://gitee.com/static/images/logo-black.svg" height="24"></a> <a href="https://github.com/ldqk/Masuit.Tools"><img src="https://p.pstatp.com/origin/13841000102b8e2ba20b2" height="24"></a>  
+包含一些常用的操作类，大都是静态类，加密解密，反射操作，权重随机筛选算法，分布式短id，表达式树，linq扩展，文件压缩，多线程下载和FTP客户端，硬件信息，字符串扩展方法，日期时间扩展操作，中国农历，大文件拷贝，图像裁剪，验证码，断点续传，集合扩展、Excel导出等常用封装。**诸多功能集一身，代码量不到1MB！**  
 [官网教程](https://masuit.com/55)  
 
-⭐⭐⭐喜欢这个项目的话就Star、Fork、Follow素质三连关♂注一下吧⭐⭐⭐  
 项目开发模式：日常代码积累+网络搜集  
+⭐⭐⭐喜欢这个项目的话就Star、Fork、Follow素质三连关♂注一下吧⭐⭐⭐  
+关于本项目，如果你有任何不懂的地方或使用过程中遇到任何问题，可以直接提issue或私信联系我，我会为你提供**完全免费**的技术指导，当然，如果你觉得不好意思接受免费的指导，想适当打赏我也是不会拒绝的！🤣🤣🤣
 ## 本项目已得到[JetBrains](https://www.jetbrains.com/shop/eform/opensource)的支持！  
 <img src="https://www.jetbrains.com/shop/static/images/jetbrains-logo-inv.svg" height="100">     
 
@@ -20,24 +21,27 @@
 SDK：.Net Core 3.1.0及以上版本
 
 ## 安装程序包
-.NET Framework 4.5  
-`.NET Framework 4.5专用版本，相比4.6.1及.NET Core的版本，阉割了HTML、文件压缩、ASP.NET扩展、硬件监测、Session扩展等功能。`
-```shell
-PM> Install-Package Masuit.Tools.Net45
-```
-.NET Framework ≥4.6.1
+### .NET Framework ≥ 4.6.1
 ```shell
 PM> Install-Package Masuit.Tools.Net
 ```
-.NET Core 2.1以上或.NET5
+### .NET Standard ≥ 2.1
+```shell
+PM> Install-Package Masuit.Tools.Abstraction
+```
+### .NET Core ≥ 2.1
 ```shell
 PM> Install-Package Masuit.Tools.Core
 ```
+### .NET Framework 4.5特供版  
+请注意：`这是.NET Framework 4.5的专用版本，相比4.6.1及.NET Core的版本，阉割了Redis、HTML、文件压缩、ASP.NET扩展、硬件监测、Session扩展等一些功能。`**如果你的项目版本高于4.5，请务必使用上述版本的包，以享受完整的功能体验！**
+```shell
+PM> Install-Package Masuit.Tools.Net45
+```
 ## 为工具库注册配置
-工具库需要用到外部配置节：  
-1. EmailDomainWhiteList，邮箱校验需要用到的白名单域名，英文逗号分隔，每个元素支持正则表达式，若未配置，则不启用邮箱校验白名单
+工具库需要用到外部配置节，.NET Framework项目配置在web.config/app.config的AppSettings配置节中，.NET Core项目配置在appsettings.json中：  
+1. EmailDomainWhiteList，邮箱校验需要用到的白名单域名，英文逗号分隔，每个元素支持正则表达式，若未配置，则不启用邮箱校验白名单，示例: `"^\\w{1,5}@qq.com,^\\w{1,5}@163.com,^\\w{1,5}@gmail.com,^\\w{1,5}@outlook.com"`
 2. EmailDomainBlockList，邮箱校验需要用到的黑名单域名，英文逗号分隔，每个元素支持正则表达式，且黑名单优先级高于白名单，若未配置，则不启用邮箱校验黑白名单
-3. BaiduAK，获取IP/地理位置相关百度云APIKey，若未配置，则无法调用GetIPLocation以及GetPhysicalAddress相关方法
 ```csharp
 public Startup(IConfiguration configuration)
 {
@@ -45,11 +49,13 @@ public Startup(IConfiguration configuration)
 }
 ```
 ## 特色功能示例代码
+### 在线体验
+https://dotnetfiddle.net/jclU4y
 ### 1.检验字符串是否是Email、手机号、URL、IP地址、身份证号等
 ```csharp
-bool isEmail="3444764617@qq.com".MatchEmail(); // 可在appsetting.json中添加EmailDomainWhiteList和EmailDomainBlockList配置邮箱域名黑白名单，逗号分隔，如"EmailDomainBlockList": "^\\w{1,5}@qq.com,^\\w{1,5}@163.com,^\\w{1,5}@gmail.com,^\\w{1,5}@outlook.com",
+bool isEmail="337845818@qq.com".MatchEmail(); // 可在appsetting.json中添加EmailDomainWhiteList和EmailDomainBlockList配置邮箱域名黑白名单，逗号分隔，如"EmailDomainBlockList": "^\\w{1,5}@qq.com,^\\w{1,5}@163.com,^\\w{1,5}@gmail.com,^\\w{1,5}@outlook.com",
 bool isInetAddress = "114.114.114.114".MatchInetAddress();
-bool isUrl = "http://masuit.com".MatchUrl();
+bool isUrl = "http://ldqk.org/20/history".MatchUrl();
 bool isPhoneNumber = "15205201520".MatchPhoneNumber();
 bool isIdentifyCard = "312000199502230660".MatchIdentifyCard();// 校验中国大陆身份证号
 bool isCNPatentNumber = "200410018477.9".MatchCNPatentNumber(); // 校验中国专利申请号或专利号，是否带校验位，校验位前是否带“.”，都可以校验，待校验的号码前不要带CN、ZL字样的前缀
@@ -61,9 +67,6 @@ float load = SystemInfo.CpuLoad;// 获取CPU占用率
 long physicalMemory = SystemInfo.PhysicalMemory;// 获取物理内存总数
 long memoryAvailable = SystemInfo.MemoryAvailable;// 获取物理内存可用率
 double freePhysicalMemory = SystemInfo.GetFreePhysicalMemory();// 获取可用物理内存
-Dictionary<string, string> diskFree = SystemInfo.DiskFree();// 获取磁盘每个分区可用空间
-Dictionary<string, string> diskTotalSpace = SystemInfo.DiskTotalSpace();// 获取磁盘每个分区总大小
-Dictionary<string, double> diskUsage = SystemInfo.DiskUsage();// 获取磁盘每个分区使用率
 double temperature = SystemInfo.GetCPUTemperature();// 获取CPU温度
 int cpuCount = SystemInfo.GetCpuCount();// 获取CPU核心数
 IList<string> ipAddress = SystemInfo.GetIPAddress();// 获取本机所有IP地址
@@ -101,12 +104,13 @@ string html = @"<link href='/Content/font-awesome/css' rel='stylesheet'/>
         </div>";
 string s = html.HtmlSantinizerStandard();//清理后：<div><span><a href="/users/account/LogOff">退出</a></span></div>
 ```
-### 5.整理操作系统的内存：
+### 5.整理Windows系统的内存：
+类似于各大系统优化软件的加速球功能
 ```csharp
 Windows.ClearMemorySilent();
 ```
 ### 6.任意进制转换
-可用于生成短id，短hash等操作，纯数学运算。
+可用于生成短id，短hash，随机字符串等操作，纯数学运算。
 ```csharp
 NumberFormater nf = new NumberFormater(36);//内置2-62进制的转换
 //NumberFormater nf = new NumberFormater("0123456789abcdefghijklmnopqrstuvwxyz");// 自定义进制字符，可用于生成验证码
@@ -114,6 +118,7 @@ string s36 = nf.ToString(12345678);
 long num = nf.FromString("7clzi");
 Console.WriteLine("12345678的36进制是：" + s36); // 7clzi
 Console.WriteLine("36进制的7clzi是：" + num); // 12345678
+var s = new NumberFormater(62).ToString(new Random().Next(100000, int.MaxValue)); //配合随机数生成随机字符串
 ```
 ```csharp
 //扩展方法形式调用
@@ -448,6 +453,7 @@ var value = typeof(MyEnum).GetValue("Read");//获取字符串表示值对应的�
 string enumString = 0.ToEnumString(typeof(MyEnum));// 获取枚举值对应的字符串表示
 ```
 ### 26.定长队列实现
+`如果是.NET5及以上，推荐使用框架自带的Channel实现该功能`
 ```csharp
 LimitedQueue<string> queue = new LimitedQueue<string>(32);// 声明一个容量为32个元素的定长队列
 ConcurrentLimitedQueue<string> queue = new ConcurrentLimitedQueue<string>(32);// 声明一个容量为32个元素的线程安全的定长队列
@@ -528,6 +534,7 @@ stream=maker.AddWatermark("水印文字",color,水印位置,边距,字体大小,
 Random rnd = new Random();
 int num = rnd.StrictNext();//产生真随机数
 double gauss = rnd.NextGauss(20,5);//产生正态高斯分布的随机数
+var s = new NumberFormater(62).ToString(new Random().Next(100000, int.MaxValue));//生成随机字符串
 ```
 ### 33.权重筛选功能
 ```csharp
@@ -702,17 +709,37 @@ tree.Path(); // 全路径
 var tree=list.ToTree(c => c.Id, c => c.Pid);//继承自ITreeParent<T>, ITreeChildren<T>的集合转换成树形结构
 var tree=list.ToTreeGeneral(c => c.Id, c => c.Pid);//一般的集合转换成树形结构
 ```
-### 45.Excel导出
-需要额外依赖包：Masuit.Tools.Excel
+### 45.简单的Excel导出
+需要额外依赖包：`Masuit.Tools.Excel`
 ```csharp
 var stream=list.Select(item=>new{
     姓名=item.Name,
     年龄=item.Age,
-    item.Gender
+    item.Gender,
+    Avatar=Image.FromStream(filestream) //图片列
 }).ToDataTable().ToExcel("Sheet1"); //自定义列名导出
-var stream=list.ToDataTable().ToExcel("Sheet1");//默认字段名作为列名导出
+var stream=list.ToDataTable("Sheet1").ToExcel("文件密码");
 ```
+#### 一些约定规则：  
+1. 图片列支持Stream、Bitmap、IEnumerable<Stream>、IEnumerable<Bitmap>、IDictionary<string,Stream>、IDictionary<string,MemoryStream>、IDictionary<string,Bitmap>类型；
+2. 其中，如果是IDictionary类型的图片列，字典的键为图片超链接的完整url；
+3. 默认字段名作为列名导出；
+4. 若list是一个具体的强类型，默认会先查找每个字段的Description标记，若有Description标记，则取Description标记作为列名显示
+5. ToExcel方法支持DataTable、List<DataTable>、Dictionary<string, DataTable>类型的直接调用
+    
 
+### 46.EFCore实体对比功能
+```csharp
+var changes=dbContext.GetChanges<Post>();//获取变更字段信息
+var added=dbContext.GetAdded<Post>();//获取添加的实体字段信息
+var removed=dbContext.GetRemoved<Post>();//获取被移除的实体字段信息
+```
+### 47.任何类型支持链式调用
+```csharp
+a.Next(func1).Next(func2).Next(func3);
+"123".Next(s=>s.ToInt32()).Next(x=>x*2).Next(x=>Math.Log(x));
+```
+    
 # Asp.Net MVC和Asp.Net Core的支持断点续传和多线程下载的ResumeFileResult
 
 在ASP.NET Core中通过MVC/WebAPI应用程序传输文件数据时使用断点续传以及多线程下载支持。
@@ -906,5 +933,3 @@ public IActionResult VirtualFile(bool fileName)
 基于EntityFrameworkCore和Lucene.NET实现的全文检索搜索引擎：[Masuit.LuceneEFCore.SearchEngine](https://github.com/ldqk/Masuit.LuceneEFCore.SearchEngine "Masuit.LuceneEFCore.SearchEngine")
 
 开源博客系统：[Masuit.MyBlogs](https://github.com/ldqk/Masuit.MyBlogs "Masuit.MyBlogs")
-### 友情赞助
-![打赏支持](https://ae01.alicdn.com/kf/H9c0ef439b7ae4a5ba4151456f3c5f0a2N.jpg)
