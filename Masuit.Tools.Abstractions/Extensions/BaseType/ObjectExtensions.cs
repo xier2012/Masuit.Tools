@@ -62,7 +62,6 @@ namespace Masuit.Tools
                     Array clonedArray = (Array)cloneObject;
                     clonedArray.ForEach((array, indices) => array.SetValue(InternalCopy(clonedArray.GetValue(indices), visited), indices));
                 }
-
             }
 
             visited.Add(originalObject, cloneObject);
@@ -89,7 +88,7 @@ namespace Masuit.Tools
                     continue;
                 }
 
-                if (IsPrimitive(fieldInfo.FieldType))
+                if (IsPrimitive(fieldInfo.FieldType) || fieldInfo.IsInitOnly)
                 {
                     continue;
                 }
@@ -137,6 +136,17 @@ namespace Masuit.Tools
         }
 
         /// <summary>
+        /// 转成非null
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="value">为空时的替换值</param>
+        /// <returns></returns>
+        public static T IfNull<T>(this T s, T value)
+        {
+            return s ?? value;
+        }
+
+        /// <summary>
         /// 转换成json字符串
         /// </summary>
         /// <param name="obj"></param>
@@ -149,14 +159,39 @@ namespace Masuit.Tools
         }
 
         /// <summary>
-        /// 严格比较两个对象是否是同一对象(判断引用)
+        /// 是否是默认值
         /// </summary>
-        /// <param name="this">自己</param>
-        /// <param name="o">需要比较的对象</param>
-        /// <returns>是否同一对象</returns>
-        public new static bool ReferenceEquals(this object @this, object o)
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool IsDefaultValue(this object value)
         {
-            return object.ReferenceEquals(@this, o);
+            if (value == null)
+            {
+                return true;
+            }
+
+            var type = value.GetType();
+            if (type == typeof(bool))
+            {
+                return (bool)value == false;
+            }
+
+            if (type.IsEnum)
+            {
+                return (int)value == 0;
+            }
+
+            if (type == typeof(DateTime))
+            {
+                return (DateTime)value == default;
+            }
+
+            if (type.IsNumeric())
+            {
+                return (double)value == 0;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -172,19 +207,22 @@ namespace Masuit.Tools
             return action(source);
         }
     }
-    class ReferenceEqualityComparer : EqualityComparer<object>
+
+    internal class ReferenceEqualityComparer : EqualityComparer<object>
     {
         public override bool Equals(object x, object y)
         {
             return ReferenceEquals(x, y);
         }
+
         public override int GetHashCode(object obj)
         {
             if (obj is null) return 0;
             return obj.GetHashCode();
         }
     }
-    static class ArrayExtensions
+
+    internal static class ArrayExtensions
     {
         public static void ForEach(this Array array, Action<Array, int[]> action)
         {
@@ -197,6 +235,7 @@ namespace Masuit.Tools
             do action(array, walker.Position);
             while (walker.Step());
         }
+
         internal class ArrayTraverse
         {
             public int[] Position;

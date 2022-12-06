@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -19,10 +17,7 @@ namespace Masuit.Tools.Reflection
     {
         #region 属性字段设置
 
-#pragma warning disable 1591
         public static BindingFlags bf = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-#pragma warning restore 1591
-        private static readonly ConcurrentDictionary<string, Delegate> _delegatesCache = new();
 
         /// <summary>
         /// 执行方法
@@ -94,7 +89,7 @@ namespace Masuit.Tools.Reflection
         {
             var parameter = Expression.Parameter(typeof(T), "e");
             var property = Expression.PropertyOrField(parameter, name);
-            var before = _delegatesCache.GetOrAdd(typeof(T) + "Get" + name, () => Expression.Lambda(property, parameter).Compile()).DynamicInvoke(obj);
+            var before = Expression.Lambda(property, parameter).Compile().DynamicInvoke(obj);
             if (value.Equals(before))
             {
                 return value.ToString();
@@ -106,12 +101,9 @@ namespace Masuit.Tools.Reflection
             }
             else
             {
-                _delegatesCache.GetOrAdd(typeof(T) + "Set" + name, () =>
-                {
-                    var valueExpression = Expression.Parameter(value.GetType(), "v");
-                    var assign = Expression.Assign(property, valueExpression);
-                    return Expression.Lambda(assign, parameter, valueExpression).Compile();
-                }).DynamicInvoke(obj, value);
+                var valueExpression = Expression.Parameter(value.GetType(), "v");
+                var assign = Expression.Assign(property, valueExpression);
+                Expression.Lambda(assign, parameter, valueExpression).Compile().DynamicInvoke(obj, value);
             }
 
             return before.ToJsonString();
@@ -126,12 +118,9 @@ namespace Masuit.Tools.Reflection
         /// <returns>T类型</returns>
         public static T GetProperty<T>(this object obj, string name)
         {
-            return (T)_delegatesCache.GetOrAdd(obj.GetType() + "Get" + name, () =>
-            {
-                var parameter = Expression.Parameter(obj.GetType(), "e");
-                var property = Expression.PropertyOrField(parameter, name);
-                return Expression.Lambda(property, parameter).Compile();
-            }).DynamicInvoke(obj);
+            var parameter = Expression.Parameter(obj.GetType(), "e");
+            var property = Expression.PropertyOrField(parameter, name);
+            return (T)Expression.Lambda(property, parameter).Compile().DynamicInvoke(obj);
         }
 
         /// <summary>
@@ -150,16 +139,6 @@ namespace Masuit.Tools.Reflection
         #region 获取Description
 
         /// <summary>
-        /// 获取枚举成员的Description信息
-        /// </summary>
-        /// <param name="value">枚举值</param>
-        /// <returns>返回枚举的Description或ToString</returns>
-        public static string GetDescription(this Enum value)
-        {
-            return GetDescription(value, null);
-        }
-
-        /// <summary>
         /// 获取枚举值的Description信息
         /// </summary>
         /// <param name ="value">枚举值</param>
@@ -172,12 +151,18 @@ namespace Masuit.Tools.Reflection
                 throw new ArgumentNullException(nameof(value));
             }
 
-            FieldInfo fi = value.GetType().GetField(value.ToString());
+            var type = value.GetType();
+            if (!Enum.IsDefined(type, value))
+            {
+                return value.ToString();
+            }
+
+            FieldInfo fi = type.GetField(value.ToString());
             var attributes = (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
             var text = attributes.Length > 0 ? attributes[0].Description : value.ToString();
             if (args is { Length: > 0 })
             {
-                return string.Format(null, text, args);
+                return string.Format(text, args);
             }
 
             return text;
@@ -233,19 +218,6 @@ namespace Masuit.Tools.Reflection
         {
             Assembly asm = Assembly.GetExecutingAssembly();
             return asm.GetManifestResourceStream(resourceName);
-        }
-
-        /// <summary>
-        /// 获取程序集资源的位图资源
-        /// </summary>
-        /// <param name="assemblyType">程序集中的某一对象类型</param>
-        /// <param name="resourceHolder">资源的根名称。例如，名为“MyResource.en-US.resources”的资源文件的根名称为“MyResource”。</param>
-        /// <param name="imageName">资源项名称</param>
-        public static Bitmap LoadBitmap(this Type assemblyType, string resourceHolder, string imageName)
-        {
-            Assembly thisAssembly = Assembly.GetAssembly(assemblyType);
-            ResourceManager rm = new ResourceManager(resourceHolder, thisAssembly);
-            return (Bitmap)rm.GetObject(imageName);
         }
 
         /// <summary>

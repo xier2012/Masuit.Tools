@@ -19,17 +19,15 @@ namespace Masuit.Tools.Models
         /// <returns></returns>
         public static IEnumerable<T> Filter<T>(this IEnumerable<T> items, Func<T, bool> func) where T : class, ITreeChildren<T>
         {
-            var results = new List<T>();
             foreach (var item in items.Where(i => i != null))
             {
                 item.Children ??= new List<T>();
                 item.Children = item.Children.Filter(func).ToList();
                 if (item.Children.Any() || func(item))
                 {
-                    results.Add(item);
+                    yield return item;
                 }
             }
-            return results;
         }
 
         /// <summary>
@@ -41,18 +39,15 @@ namespace Masuit.Tools.Models
         /// <returns></returns>
         public static IEnumerable<Tree<T>> Filter<T>(this IEnumerable<Tree<T>> items, Func<Tree<T>, bool> func) where T : class
         {
-            var results = new List<Tree<T>>();
             foreach (var item in items.Where(i => i != null))
             {
                 item.Children ??= new List<Tree<T>>();
                 item.Children = item.Children.Filter(func).ToList();
                 if (item.Children.Any() || func(item))
                 {
-                    results.Add(item);
+                    yield return item;
                 }
             }
-
-            return results;
         }
 
         /// <summary>
@@ -84,39 +79,42 @@ namespace Masuit.Tools.Models
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="items"></param>
+        /// <param name="optionAction">平铺时子级需要做的操作，参数1：子级对象，参数2：父级对象</param>
         /// <returns></returns>
-        public static IEnumerable<T> Flatten<T>(this IEnumerable<T> items) where T : class, ITreeChildren<T>
+        public static IEnumerable<T> Flatten<T>(this IEnumerable<T> items, Action<T, T> optionAction = null) where T : class, ITreeChildren<T>
         {
-            var result = new List<T>();
             foreach (var item in items)
             {
-                result.Add(item);
+                yield return item;
                 item.Children ??= new List<T>();
-                result.AddRange(item.Children.Flatten());
+                item.Children.ForEach(c => optionAction?.Invoke(c, item));
+                foreach (var children in item.Children.Flatten(optionAction))
+                {
+                    yield return children;
+                }
             }
-
-            return result;
         }
 
         /// <summary>
         /// 平铺开
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <param name="p"></param>
+        /// <param name="optionAction">平铺时子级需要做的操作，参数1：子级对象，参数2：父级对象</param>
         /// <returns></returns>
-        public static IEnumerable<T> Flatten<T>(this T p) where T : class, ITreeChildren<T>
+        public static IEnumerable<T> Flatten<T>(this T p, Action<T, T> optionAction = null) where T : class, ITreeChildren<T>
         {
-            var result = new List<T>()
-            {
-                p
-            };
+            yield return p;
             foreach (var item in p.Children)
             {
-                result.Add(item);
+                yield return item;
                 item.Children ??= new List<T>();
-                result.AddRange(item.Children.Flatten());
+                item.Children.ForEach(c => optionAction?.Invoke(c, item));
+                foreach (var children in item.Children.Flatten())
+                {
+                    yield return children;
+                }
             }
-
-            return result;
         }
 
         /// <summary>
@@ -125,17 +123,19 @@ namespace Masuit.Tools.Models
         /// <typeparam name="T"></typeparam>
         /// <param name="items"></param>
         /// <param name="selector"></param>
+        /// <param name="optionAction">平铺时子级需要做的操作，参数1：子级对象，参数2：父级对象</param>
         /// <returns></returns>
-        public static IEnumerable<T> Flatten<T>(this IEnumerable<T> items, Func<T, IEnumerable<T>> selector)
+        public static IEnumerable<T> Flatten<T>(this IEnumerable<T> items, Func<T, IEnumerable<T>> selector, Action<T, T> optionAction = null)
         {
-            var result = new List<T>();
             foreach (var item in items)
             {
-                result.Add(item);
-                result.AddRange(selector(item).Flatten(selector));
+                yield return item;
+                selector(item).ForEach(c => optionAction?.Invoke(c, item));
+                foreach (var children in selector(item).Flatten(selector))
+                {
+                    yield return children;
+                }
             }
-
-            return result;
         }
 
         /// <summary>
@@ -143,39 +143,42 @@ namespace Masuit.Tools.Models
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="items"></param>
+        /// <param name="optionAction">平铺时子级需要做的操作，参数1：子级对象，参数2：父级对象</param>
         /// <returns></returns>
-        public static IEnumerable<Tree<T>> Flatten<T>(this IEnumerable<Tree<T>> items) where T : class
+        public static IEnumerable<Tree<T>> Flatten<T>(this IEnumerable<Tree<T>> items, Action<Tree<T>, Tree<T>> optionAction = null) where T : class
         {
-            var result = new List<Tree<T>>();
             foreach (var item in items)
             {
-                result.Add(item);
+                yield return item;
                 item.Children ??= new List<Tree<T>>();
-                result.AddRange(item.Children.Flatten());
+                item.Children.ForEach(c => optionAction?.Invoke(c, item));
+                foreach (var tree in item.Children.Flatten())
+                {
+                    yield return tree;
+                }
             }
-
-            return result;
         }
 
         /// <summary>
         /// 平铺开
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <param name="p"></param>
+        /// <param name="optionAction">平铺时子级需要做的操作，参数1：子级对象，参数2：父级对象</param>
         /// <returns></returns>
-        public static IEnumerable<Tree<T>> Flatten<T>(this Tree<T> p) where T : class
+        public static IEnumerable<Tree<T>> Flatten<T>(this Tree<T> p, Action<Tree<T>, Tree<T>> optionAction = null) where T : class
         {
-            var result = new List<Tree<T>>()
-            {
-                p
-            };
+            yield return p;
             foreach (var item in p.Children)
             {
-                result.Add(item);
+                yield return item;
                 item.Children ??= new List<Tree<T>>();
-                result.AddRange(item.Children.Flatten());
+                item.Children.ForEach(c => optionAction?.Invoke(c, item));
+                foreach (var tree in item.Children.Flatten())
+                {
+                    yield return tree;
+                }
             }
-
-            return result;
         }
 
         /// <summary>
@@ -184,17 +187,19 @@ namespace Masuit.Tools.Models
         /// <typeparam name="T"></typeparam>
         /// <param name="items"></param>
         /// <param name="selector"></param>
+        /// <param name="optionAction">平铺时子级需要做的操作，参数1：子级对象，参数2：父级对象</param>
         /// <returns></returns>
-        public static IEnumerable<Tree<T>> Flatten<T>(this IEnumerable<Tree<T>> items, Func<Tree<T>, IEnumerable<Tree<T>>> selector)
+        public static IEnumerable<Tree<T>> Flatten<T>(this IEnumerable<Tree<T>> items, Func<Tree<T>, IEnumerable<Tree<T>>> selector, Action<Tree<T>, Tree<T>> optionAction = null)
         {
-            var result = new List<Tree<T>>();
             foreach (var item in items)
             {
-                result.Add(item);
-                result.AddRange(selector(item).Flatten(selector));
+                yield return item;
+                item.Children.ForEach(c => optionAction?.Invoke(c, item));
+                foreach (var tree in selector(item).Flatten(selector))
+                {
+                    yield return tree;
+                }
             }
-
-            return result;
         }
 
         /// <summary>
@@ -284,7 +289,51 @@ namespace Masuit.Tools.Models
             return temp;
         }
 
+        /// <summary>
+        /// 平行集合转换成树形结构
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="idSelector"></param>
+        /// <param name="pidSelector"></param>
+        /// <param name="topValue">根对象parentId的值</param>
+        /// <returns></returns>
+        public static List<T> ToTree<T, TKey>(this IEnumerable<T> source, Expression<Func<T, TKey>> idSelector, Expression<Func<T, TKey?>> pidSelector, TKey? topValue = default) where T : ITreeParent<T>, ITreeChildren<T> where TKey : struct
+        {
+            if (idSelector.Body.ToString() == pidSelector.Body.ToString())
+            {
+                throw new ArgumentException("idSelector和pidSelector不应该为同一字段！");
+            }
+
+            var pidFunc = pidSelector.Compile();
+            var idFunc = idSelector.Compile();
+            source = source.Where(t => t != null);
+            var temp = new List<T>();
+            foreach (var item in source.Where(item => pidFunc(item) is null || pidFunc(item).Equals(topValue)))
+            {
+                item.Parent = default;
+                TransData(source, item, idFunc, pidFunc);
+                temp.Add(item);
+            }
+
+            return temp;
+        }
+
         private static void TransData<T, TKey>(IEnumerable<T> source, T parent, Func<T, TKey> idSelector, Func<T, TKey> pidSelector) where T : ITreeParent<T>, ITreeChildren<T> where TKey : IComparable
+        {
+            var temp = new List<T>();
+            foreach (var item in source.Where(item => pidSelector(item)?.Equals(idSelector(parent)) == true))
+            {
+                TransData(source, item, idSelector, pidSelector);
+                item.Parent = parent;
+                temp.Add(item);
+            }
+
+            parent.Children = temp;
+        }
+
+        private static void TransData<T, TKey>(IEnumerable<T> source, T parent, Func<T, TKey> idSelector, Func<T, TKey?> pidSelector) where T : ITreeParent<T>, ITreeChildren<T> where TKey : struct
         {
             var temp = new List<T>();
             foreach (var item in source.Where(item => pidSelector(item)?.Equals(idSelector(parent)) == true))
@@ -413,11 +462,28 @@ namespace Masuit.Tools.Models
         public static string Path<T>(this T tree, Func<T, string> selector) where T : ITreeParent<T> => GetFullPath(tree, selector);
 
         /// <summary>
+        /// 节点路径
+        /// </summary>
+        /// <param name="tree"></param>
+        /// <param name="separator">分隔符</param>
+        public static string Path<T>(this T tree, string separator) where T : ITree<T> => GetFullPath(tree, t => t.Name, separator);
+
+        /// <summary>
+        /// 节点路径
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="tree"></param>
+        /// <param name="selector">选择字段</param>
+        /// <param name="separator">分隔符</param>
+        /// <returns></returns>
+        public static string Path<T>(this T tree, Func<T, string> selector, string separator) where T : ITreeParent<T> => GetFullPath(tree, selector, separator);
+
+        /// <summary>
         /// 根节点
         /// </summary>
         public static T Root<T>(this T tree) where T : ITreeParent<T> => GetRoot(tree, t => t.Parent);
 
-        private static string GetFullPath<T>(T c, Func<T, string> selector) where T : ITreeParent<T> => c.Parent != null ? GetFullPath(c.Parent, selector) + "/" + selector(c) : selector(c);
+        private static string GetFullPath<T>(T c, Func<T, string> selector, string separator = "/") where T : ITreeParent<T> => c.Parent != null ? GetFullPath(c.Parent, selector, separator) + separator + selector(c) : selector(c);
 
         /// <summary>
         /// 根节点

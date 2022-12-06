@@ -18,7 +18,9 @@ namespace Masuit.Tools
 {
     public static partial class StringExtensions
     {
-        public static string Join(this IEnumerable<string> strs, string separate = ", ") => string.Join(separate, strs);
+        public static string Join(this IEnumerable<string> strs, string separate = ", ", bool removeEmptyEntry = false) => string.Join(separate, removeEmptyEntry ? strs.Where(s => !string.IsNullOrEmpty(s)) : strs);
+
+        public static string Join<T>(this IEnumerable<T> strs, string separate = ", ", bool removeEmptyEntry = false) => string.Join(separate, removeEmptyEntry ? strs.Where(t => t != null) : strs);
 
         /// <summary>
         /// 字符串转时间
@@ -92,7 +94,7 @@ namespace Masuit.Tools
         #region 检测字符串中是否包含列表中的关键词
 
         /// <summary>
-        /// 检测字符串中是否包含列表中的关键词
+        /// 检测字符串中是否包含列表中的关键词(快速匹配)
         /// </summary>
         /// <param name="s">源字符串</param>
         /// <param name="keys">关键词列表</param>
@@ -100,35 +102,138 @@ namespace Masuit.Tools
         /// <returns></returns>
         public static bool Contains(this string s, IEnumerable<string> keys, bool ignoreCase = true)
         {
-            if (!keys.Any() || string.IsNullOrEmpty(s))
+            if (keys is not ICollection<string> array)
+            {
+                array = keys.ToArray();
+            }
+
+            if (array.Count == 0 || string.IsNullOrEmpty(s))
+            {
+                return false;
+            }
+
+            return ignoreCase ? array.Any(item => s.IndexOf(item, StringComparison.InvariantCultureIgnoreCase) >= 0) : array.Any(s.Contains);
+        }
+
+        /// <summary>
+        /// 检测字符串中是否包含列表中的关键词(安全匹配)
+        /// </summary>
+        /// <param name="s">源字符串</param>
+        /// <param name="keys">关键词列表</param>
+        /// <param name="ignoreCase">忽略大小写</param>
+        /// <returns></returns>
+        public static bool ContainsSafety(this string s, IEnumerable<string> keys, bool ignoreCase = true)
+        {
+            if (keys is not ICollection<string> array)
+            {
+                array = keys.ToArray();
+            }
+
+            if (array.Count == 0 || string.IsNullOrEmpty(s))
+            {
+                return false;
+            }
+
+            bool flag = false;
+            if (ignoreCase)
+            {
+                foreach (var item in array)
+                {
+                    if (s.Contains(item))
+                    {
+                        flag = true;
+                    }
+                }
+            }
+            else
+            {
+                foreach (var item in array)
+                {
+                    if (s.IndexOf(item, StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    {
+                        flag = true;
+                    }
+                }
+            }
+
+            return flag;
+        }
+
+        /// <summary>
+        /// 检测字符串中是否以列表中的关键词结尾
+        /// </summary>
+        /// <param name="s">源字符串</param>
+        /// <param name="keys">关键词列表</param>
+        /// <param name="ignoreCase">忽略大小写</param>
+        /// <returns></returns>
+        public static bool EndsWith(this string s, IEnumerable<string> keys, bool ignoreCase = true)
+        {
+            if (keys is not ICollection<string> array)
+            {
+                array = keys.ToArray();
+            }
+
+            if (array.Count == 0 || string.IsNullOrEmpty(s))
+            {
+                return false;
+            }
+
+            var pattern = $"({array.Select(Regex.Escape).Join("|")})$";
+            return ignoreCase ? Regex.IsMatch(s, pattern, RegexOptions.IgnoreCase) : Regex.IsMatch(s, pattern);
+        }
+
+        /// <summary>
+        /// 检测字符串中是否以列表中的关键词开始
+        /// </summary>
+        /// <param name="s">源字符串</param>
+        /// <param name="keys">关键词列表</param>
+        /// <param name="ignoreCase">忽略大小写</param>
+        /// <returns></returns>
+        public static bool StartsWith(this string s, IEnumerable<string> keys, bool ignoreCase = true)
+        {
+            if (keys is not ICollection<string> array)
+            {
+                array = keys.ToArray();
+            }
+
+            if (array.Count == 0 || string.IsNullOrEmpty(s))
+            {
+                return false;
+            }
+
+            var pattern = $"^({array.Select(Regex.Escape).Join("|")})";
+            return ignoreCase ? Regex.IsMatch(s, pattern, RegexOptions.IgnoreCase) : Regex.IsMatch(s, pattern);
+        }
+
+        /// <summary>
+        /// 检测字符串中是否包含列表中的关键词
+        /// </summary>
+        /// <param name="s">源字符串</param>
+        /// <param name="regex">关键词列表</param>
+        /// <param name="ignoreCase">忽略大小写</param>
+        /// <returns></returns>
+        public static bool RegexMatch(this string s, string regex, bool ignoreCase = true)
+        {
+            if (string.IsNullOrEmpty(regex) || string.IsNullOrEmpty(s))
             {
                 return false;
             }
 
             if (ignoreCase)
             {
-                return Regex.IsMatch(s, string.Join("|", keys.Select(Regex.Escape)), RegexOptions.IgnoreCase);
+                return Regex.IsMatch(s, regex, RegexOptions.IgnoreCase);
             }
 
-            return Regex.IsMatch(s, string.Join("|", keys.Select(Regex.Escape)));
+            return Regex.IsMatch(s, regex);
         }
 
         /// <summary>
-        /// 判断是否包含符号
+        /// 检测字符串中是否包含列表中的关键词
         /// </summary>
-        /// <param name="str"></param>
-        /// <param name="symbols"></param>
+        /// <param name="s">源字符串</param>
+        /// <param name="regex">关键词列表</param>
         /// <returns></returns>
-        public static bool ContainsSymbol(this string str, params string[] symbols)
-        {
-            return str switch
-            {
-                null => false,
-                string a when string.IsNullOrEmpty(a) => false,
-                string a when a == string.Empty => false,
-                _ => symbols.Any(t => str.Contains(t))
-            };
-        }
+        public static bool RegexMatch(this string s, Regex regex) => !string.IsNullOrEmpty(s) && regex.IsMatch(s);
 
         #endregion 检测字符串中是否包含列表中的关键词
 
@@ -139,7 +244,39 @@ namespace Masuit.Tools
         /// <returns></returns>
         public static bool IsNullOrEmpty(this string s)
         {
-            return string.IsNullOrEmpty(s);
+            return string.IsNullOrWhiteSpace(s) || s.Equals("null", StringComparison.CurrentCultureIgnoreCase);
+        }
+
+        /// <summary>
+        /// 转成非null
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static string AsNotNull(this string s)
+        {
+            return string.IsNullOrEmpty(s) ? "" : s;
+        }
+
+        /// <summary>
+        /// 转成非null
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="value">为空时的替换值</param>
+        /// <returns></returns>
+        public static string IfNullOrEmpty(this string s, string value)
+        {
+            return string.IsNullOrEmpty(s) ? value : s;
+        }
+
+        /// <summary>
+        /// 转成非null
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="valueFactory">为空时的替换值函数</param>
+        /// <returns></returns>
+        public static string IfNullOrEmpty(this string s, Func<string> valueFactory)
+        {
+            return string.IsNullOrEmpty(s) ? valueFactory() : s;
         }
 
         /// <summary>
@@ -183,7 +320,7 @@ namespace Masuit.Tools
                 return (false, null);
             }
 
-            var match = Regex.Match(s, @"^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$");
+            var match = Regex.Match(s, @"[^@ \t\r\n]+@[^@ \t\r\n]+\.[^@ \t\r\n]+");
             var isMatch = match.Success;
             if (isMatch && valid)
             {
@@ -417,6 +554,22 @@ namespace Masuit.Tools
         }
 
         /// <summary>
+        /// IP地址转换成数字
+        /// </summary>
+        /// <param name="ip">IP地址</param>
+        /// <returns>数字,输入无效IP地址返回0</returns>
+        public static uint ToUInt32(this IPAddress ip)
+        {
+            byte[] bInt = ip.GetAddressBytes();
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(bInt);
+            }
+
+            return BitConverter.ToUInt32(bInt, 0);
+        }
+
+        /// <summary>
         /// 判断IP是否是私有地址
         /// </summary>
         /// <param name="ip"></param>
@@ -440,6 +593,19 @@ namespace Masuit.Tools
             return current >= begin.IPToID() && current <= ends.IPToID();
         }
 
+        /// <summary>
+        /// 判断IP地址在不在某个IP地址段
+        /// </summary>
+        /// <param name="input">需要判断的IP地址</param>
+        /// <param name="begin">起始地址</param>
+        /// <param name="ends">结束地址</param>
+        /// <returns></returns>
+        public static bool IpAddressInRange(this IPAddress input, IPAddress begin, IPAddress ends)
+        {
+            uint current = input.ToUInt32();
+            return current >= begin.ToUInt32() && current <= ends.ToUInt32();
+        }
+
         #endregion IP地址
 
         #region 校验手机号码的正确性
@@ -448,29 +614,10 @@ namespace Masuit.Tools
         /// 匹配手机号码
         /// </summary>
         /// <param name="s">源字符串</param>
-        /// <param name="isMatch">是否匹配成功，若返回true，则会得到一个Match对象，否则为null</param>
-        /// <returns>匹配对象</returns>
-        public static Match MatchPhoneNumber(this string s, out bool isMatch)
-        {
-            if (string.IsNullOrEmpty(s))
-            {
-                isMatch = false;
-                return null;
-            }
-            Match match = Regex.Match(s, @"^((1[3,5,6,8][0-9])|(14[5,7])|(17[0,1,3,6,7,8])|(19[8,9]))\d{8}$");
-            isMatch = match.Success;
-            return isMatch ? match : null;
-        }
-
-        /// <summary>
-        /// 匹配手机号码
-        /// </summary>
-        /// <param name="s">源字符串</param>
         /// <returns>是否匹配成功</returns>
         public static bool MatchPhoneNumber(this string s)
         {
-            MatchPhoneNumber(s, out bool success);
-            return success;
+            return !string.IsNullOrEmpty(s) && s[0] == '1' && (s[1] > '2' || s[1] <= '9');
         }
 
         #endregion 校验手机号码的正确性
@@ -510,7 +657,7 @@ namespace Masuit.Tools
         /// <returns></returns>
         public static byte[] ToByteArray(this string @this)
         {
-            return Encoding.ASCII.GetBytes(@this);
+            return Encoding.UTF8.GetBytes(@this);
         }
 
         #region Crc32
@@ -538,6 +685,7 @@ namespace Masuit.Tools
         #endregion Crc32
 
         #region 权威校验中国专利申请号/专利号
+
         /// <summary>
         /// 中国专利申请号（授权以后就是专利号）由两种组成
         /// 2003年9月30号以前的9位（不带校验位是8号），校验位之前可能还会有一个点，例如：00262311, 002623110 或 00262311.0
@@ -575,7 +723,7 @@ $", RegexOptions.IgnorePatternWhitespace | RegexOptions.IgnoreCase | RegexOption
             patnum = patnum.ToUpper().Replace(".", "");
             if (patnum.Length == 9 || patnum.Length == 8)
             {
-                byte[] factors8 = new byte[8] { 2, 3, 4, 5, 6, 7, 8, 9 };
+                byte[] factors8 = new byte[] { 2, 3, 4, 5, 6, 7, 8, 9 };
                 int year = Convert.ToUInt16(patnum.Substring(0, 2));
                 year += (year >= 85) ? (ushort)1900u : (ushort)2000u;
                 if (year >= 1985 || year <= 2003)
@@ -639,6 +787,8 @@ $", RegexOptions.IgnorePatternWhitespace | RegexOptions.IgnoreCase | RegexOption
             return isPatnumTrue;
         }
 
+        #endregion 权威校验中国专利申请号/专利号
+
         /// <summary>
         /// 取字符串前{length}个字
         /// </summary>
@@ -649,6 +799,13 @@ $", RegexOptions.IgnorePatternWhitespace | RegexOptions.IgnoreCase | RegexOption
         {
             return s.Length > length ? s.Substring(0, length) : s;
         }
+
+        /// <summary>
+        /// 对比字符串的汉明距离
+        /// </summary>
+        /// <param name="this"></param>
+        /// <param name="that"></param>
+        /// <returns></returns>
+        public static int HammingDistance(this string @this, string that) => new SimHash(@this).HammingDistance(new SimHash(that));
     }
-    #endregion
 }

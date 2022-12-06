@@ -1,103 +1,29 @@
-﻿using Masuit.Tools;
-using Masuit.Tools.Database;
-using Masuit.Tools.Excel;
+using Masuit.Tools.AspNetCore.ModelBinder;
 using Masuit.Tools.Files;
-using Masuit.Tools.Models;
-using Masuit.Tools.Reflection;
-using Masuit.Tools.Security;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
+using Masuit.Tools.Media;
 
-namespace NetCoreTest
+var stream = File.Open(@"D:\images\QQ��ͼ20190923195408.jpg", FileMode.Open, FileAccess.ReadWrite);
+var watermarker = new ImageWatermarker(stream);
+var ms = watermarker.AddWatermark(File.OpenRead(@"D:\images\QQ��ͼ20190923195408_��ͼ��.png"), 0.5f);
+ms.SaveFile(@"Y:\1.jpg");
+Console.WriteLine(1);
+Console.ReadKey();
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers(options => options.ModelBinderProviders.InsertBodyOrDefaultBinding());
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
 {
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            Enumerable.Range(1, 2).Select(i => new
-            {
-                序号 = i,
-                图片 = new Dictionary<string, FileStream>()
-                {
-                    ["https://ldqk.org/1383"] = File.OpenRead(@"D:\images\emotion\16.jpg")
-                }
-            }).ToDataTable("aa").ToExcel().SaveFile(@"Y:\2.xlsx");
-            var myClass = new MyClass()
-            {
-                MyProperty1 = 1,
-                Id = "mcc",
-                Pid = "mc",
-                Parent = new MyClass()
-                {
-                    Id = "mc",
-                    Pid = "ccc",
-                    Parent = new MyClass()
-                    {
-                        Id = "ccc"
-                    }
-                }
-            };
-            var allParent = myClass.AllParent().Append(myClass);
-            var tree = allParent.ToTreeGeneral(c => c.Id, c => c.Pid);
-            Console.WriteLine(tree.ToJsonString(new JsonSerializerSettings()
-            {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                Formatting = Formatting.Indented
-            }));
-            var path = myClass.Path(c => c.Id);
-            Console.WriteLine(path);
-
-            myClass.SetProperty(nameof(MyClass.MyProperty1), 1);
-            Console.ReadKey();
-            var rsaKey = RsaCrypt.GenerateRsaKeys(RsaKeyType.PKCS8, 2048);
-            Console.WriteLine(rsaKey.PrivateKey);
-            Console.WriteLine(rsaKey.PublicKey);
-            var enc = "123456".RSAEncrypt();
-            Console.WriteLine(enc);
-            Console.Beep();
-            var dec = enc.RSADecrypt();
-            Console.WriteLine(dec);
-            Console.ReadKey();
-            //CreateWebHostBuilder(args).Build().Run();
-        }
-
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
-    }
-
-    public class MyClass : ITree<MyClass>
-    {
-        [Description("test")]
-        public string Pid { get; set; }
-        public int? MyProperty1 { get; set; }
-
-        /// <summary>
-        /// 名字
-        /// </summary>
-        public string Id { get; set; }
-
-        /// <summary>
-        /// 父节点
-        /// </summary>
-        [JsonIgnore]
-        public virtual MyClass Parent { get; set; }
-
-        /// <summary>
-        /// 子级
-        /// </summary>
-        [JsonIgnore]
-        public ICollection<MyClass> Children { get; set; } = new List<MyClass>();
-
-        /// <summary>
-        /// 名字
-        /// </summary>
-        public string Name { get; set; }
-    }
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();

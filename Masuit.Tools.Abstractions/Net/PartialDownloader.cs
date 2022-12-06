@@ -31,9 +31,9 @@ namespace Masuit.Tools.Net
         private readonly AsyncOperation _aop = AsyncOperationManager.CreateOperation(null);
         readonly int[] _lastSpeeds;
         int _counter;
-        private bool _wait;
         private int _to;
         private int _totalBytesRead;
+        private bool _wait;
 
         /// <summary>
         /// 下载已停止

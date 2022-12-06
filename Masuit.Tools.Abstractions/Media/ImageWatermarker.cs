@@ -1,95 +1,168 @@
-﻿using System;
-using System.Drawing;
-using System.Drawing.Text;
+﻿using SixLabors.Fonts;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Processors.Transforms;
+using System;
 using System.IO;
 
 namespace Masuit.Tools.Media
 {
-    public class ImageWatermarker
-    {
-        /// <summary>
-        /// 是否跳过小缩略图
-        /// </summary>
-        public bool SkipWatermarkForSmallImages { get; set; }
+	public class ImageWatermarker
+	{
+		/// <summary>
+		/// 是否跳过小缩略图
+		/// </summary>
+		public bool SkipWatermarkForSmallImages { get; set; }
 
-        /// <summary>
-        /// 小图像素大小
-        /// </summary>
-        public int SmallImagePixelsThreshold { get; set; }
+		/// <summary>
+		/// 小图像素大小
+		/// </summary>
+		public int SmallImagePixelsThreshold { get; set; }
 
-        private readonly Stream _stream;
+		private readonly Stream _stream;
 
-        public ImageWatermarker(Stream originStream)
-        {
-            _stream = originStream;
-        }
+		public ImageWatermarker(Stream originStream)
+		{
+			_stream = originStream;
+		}
 
-        /// <summary>
-        /// 添加水印
-        /// </summary>
-        /// <param name="watermarkText">水印文字</param>
-        /// <param name="color">水印颜色</param>
-        /// <param name="watermarkPosition">水印位置</param>
-        /// <param name="textPadding">边距</param>
-        /// <param name="fontSize">字体大小</param>
-        /// <param name="font">字体</param>
-        /// <param name="textAntiAlias">不提示的情况下使用抗锯齿标志符号位图来绘制每个字符。
-        ///    由于抗锯齿质量就越好。
-        ///    因为关闭了提示，词干宽度之间的差异可能非常明显。</param>
-        /// <returns></returns>
-        public MemoryStream AddWatermark(string watermarkText, Color color, WatermarkPosition watermarkPosition = WatermarkPosition.BottomRight, int textPadding = 10, int fontSize = 20, Font font = null, bool textAntiAlias = true)
-        {
-            using var img = Image.FromStream(_stream);
-            if (SkipWatermarkForSmallImages && (img.Height < Math.Sqrt(SmallImagePixelsThreshold) || img.Width < Math.Sqrt(SmallImagePixelsThreshold)))
-            {
-                return _stream.SaveAsMemoryStream();
-            }
+		public MemoryStream AddWatermark(string watermarkText, string ttfFontPath, int fontSize, Color color, WatermarkPosition watermarkPosition = WatermarkPosition.BottomRight, int textPadding = 10)
+		{
+			var fonts = new FontCollection();
+			var fontFamily = fonts.Add(ttfFontPath); //字体的路径（电脑自带字体库，去copy出来）
+			var font = new Font(fontFamily, fontSize, FontStyle.Bold);
+			return AddWatermark(watermarkText, font, color, watermarkPosition, textPadding);
+		}
 
-            using var graphic = Graphics.FromImage(img);
-            if (textAntiAlias)
-            {
-                graphic.TextRenderingHint = TextRenderingHint.AntiAlias;
-            }
+		/// <summary>
+		/// 添加水印
+		/// </summary>
+		/// <param name="watermarkText">水印文字</param>
+		/// <param name="color">水印颜色</param>
+		/// <param name="watermarkPosition">水印位置</param>
+		/// <param name="textPadding">边距</param>
+		/// <param name="font">字体</param>
+		/// <returns></returns>
+		public MemoryStream AddWatermark(string watermarkText, Font font, Color color, WatermarkPosition watermarkPosition = WatermarkPosition.BottomRight, int textPadding = 10)
+		{
+			using var img = Image.Load(_stream);
+			var textMeasure = TextMeasurer.Measure(watermarkText, new TextOptions(font));
+			if (SkipWatermarkForSmallImages && (img.Height < Math.Sqrt(SmallImagePixelsThreshold) || img.Width < Math.Sqrt(SmallImagePixelsThreshold) || img.Width <= textMeasure.Width))
+			{
+				return _stream as MemoryStream ?? _stream.SaveAsMemoryStream();
+			}
 
-            using var brush = new SolidBrush(color);
-            if (img.Width / fontSize > 50)
-            {
-                fontSize = img.Width / 50;
-            }
+			if (img.Width / font.Size > 50)
+			{
+				font = font.Family.CreateFont(img.Width * 1f / 50);
+			}
 
-            using var f = font ?? new Font(FontFamily.GenericSansSerif, fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
-            var textSize = graphic.MeasureString(watermarkText, f);
-            int x, y;
-            textPadding += (img.Width - 1000) / 100;
-            switch (watermarkPosition)
-            {
-                case WatermarkPosition.TopLeft:
-                    x = textPadding;
-                    y = textPadding;
-                    break;
-                case WatermarkPosition.TopRight:
-                    x = img.Width - (int)textSize.Width - textPadding;
-                    y = textPadding;
-                    break;
-                case WatermarkPosition.BottomLeft:
-                    x = textPadding;
-                    y = img.Height - (int)textSize.Height - textPadding;
-                    break;
-                case WatermarkPosition.BottomRight:
-                    x = img.Width - (int)textSize.Width - textPadding;
-                    y = img.Height - (int)textSize.Height - textPadding;
-                    break;
-                default:
-                    x = textPadding;
-                    y = textPadding;
-                    break;
-            }
+			float x, y;
+			textPadding += (img.Width - 1000) / 100;
+			switch (watermarkPosition)
+			{
+				case WatermarkPosition.TopRight:
+					x = img.Width - textMeasure.Width - textPadding;
+					y = textPadding;
+					break;
 
-            graphic.DrawString(watermarkText, f, brush, new Point(x, y));
-            var ms = new MemoryStream();
-            img.Save(ms, img.RawFormat);
-            ms.Position = 0;
-            return ms;
-        }
-    }
+				case WatermarkPosition.BottomLeft:
+					x = textPadding;
+					y = img.Height - textMeasure.Height - textPadding;
+					break;
+
+				case WatermarkPosition.BottomRight:
+					x = img.Width - textMeasure.Width - textPadding;
+					y = img.Height - textMeasure.Height - textPadding;
+					break;
+
+				case WatermarkPosition.Center:
+					x = (img.Width - textMeasure.Width) / 2;
+					y = (img.Height - textMeasure.Height) / 2;
+					break;
+
+				default:
+					x = textPadding;
+					y = textPadding;
+					break;
+			}
+
+			img.Mutate(c => c.DrawText(watermarkText, font, color, new PointF(x, y)));
+			var ms = new MemoryStream();
+			img.SaveAsWebp(ms);
+			ms.Position = 0;
+			return ms;
+		}
+
+		/// <summary>
+		/// 添加水印
+		/// </summary>
+		/// <param name="watermarkImage">水印图片</param>
+		/// <param name="opacity">水印图片</param>
+		/// <param name="watermarkPosition">水印位置</param>
+		/// <param name="padding">水印边距</param>
+		/// <returns></returns>
+		public MemoryStream AddWatermark(Stream watermarkImage, float opacity = 1f, WatermarkPosition watermarkPosition = WatermarkPosition.BottomRight, int padding = 20)
+		{
+			using var img = Image.Load(_stream);
+			var height = img.Height;
+			var width = img.Width;
+			if (SkipWatermarkForSmallImages && (height < Math.Sqrt(SmallImagePixelsThreshold) || width < Math.Sqrt(SmallImagePixelsThreshold)))
+			{
+				return _stream as MemoryStream ?? _stream.SaveAsMemoryStream();
+			}
+
+			var watermark = Image.Load(watermarkImage);
+			watermark.Mutate(c => c.Resize(new ResizeOptions()
+			{
+				Size = new Size
+				{
+					Width = width / 10,
+					Height = height / 10,
+				},
+				Mode = ResizeMode.Pad,
+				Sampler = new BicubicResampler()
+			}));
+			int x, y;
+			padding += (width - 1000) / 100;
+			switch (watermarkPosition)
+			{
+				case WatermarkPosition.TopRight:
+					x = width - watermark.Width - padding;
+					y = padding;
+					break;
+
+				case WatermarkPosition.BottomLeft:
+					x = padding;
+					y = height - watermark.Height - padding;
+					break;
+
+				case WatermarkPosition.BottomRight:
+					x = width - watermark.Width - padding;
+					y = height - watermark.Height - padding;
+					break;
+
+				case WatermarkPosition.Center:
+					x = (img.Width - watermark.Width) / 2;
+					y = (img.Height - watermark.Height) / 2;
+					break;
+
+				default:
+					x = padding;
+					y = padding;
+					break;
+			}
+
+			img.Mutate(c =>
+			{
+				c.DrawImage(watermark, new Point(x, y), opacity);
+				watermark.Dispose();
+			});
+			var ms = new MemoryStream();
+			img.SaveAsWebp(ms);
+			ms.Position = 0;
+			return ms;
+		}
+	}
 }
