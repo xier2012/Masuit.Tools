@@ -3,13 +3,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Document)]
 [FormatCategory(FormatCategory.System)]
-internal class REGDetector : AbstractRegexSignatureDetector
+internal sealed class REGDetector : AbstractRegexSignatureDetector
 {
     public override string Precondition => "txt";
 

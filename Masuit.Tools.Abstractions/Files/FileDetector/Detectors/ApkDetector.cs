@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Archive)]
 [FormatCategory(FormatCategory.Compression)]
 [FormatCategory(FormatCategory.Executable)]
-internal class ApkDetector : AbstractZipDetailDetector
+internal sealed class ApkDetector : AbstractZipDetailDetector
 {
     public override IEnumerable<string> Files
     {

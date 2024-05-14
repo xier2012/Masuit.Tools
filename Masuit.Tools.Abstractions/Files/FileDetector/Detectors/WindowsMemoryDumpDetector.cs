@@ -2,16 +2,16 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.System)]
-internal class WindowsMemoryDumpDetector : AbstractSignatureDetector
+internal sealed class WindowsMemoryDumpDetector : AbstractSignatureDetector
 {
     private static readonly SignatureInformation[] DmpSignatureInfo = {
         new() { Position = 0, Signature = new byte [] { 0x4D, 0x44, 0x4D, 0x50, 0x93, 0xA7 } },
-        new() { Position = 0, Signature = new byte [] { 0x50, 0x41, 0x47, 0x45, 0x44, 0x55 } },
+        new() { Position = 0, Signature = "PAGEDU"u8.ToArray() },
     };
 
     public override string Extension => "dmp";

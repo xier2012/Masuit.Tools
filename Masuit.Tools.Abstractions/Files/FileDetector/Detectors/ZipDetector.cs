@@ -2,13 +2,13 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Compression)]
 [FormatCategory(FormatCategory.Archive)]
-internal class ZipDetector : AbstractSignatureDetector
+internal sealed class ZipDetector : AbstractSignatureDetector
 {
     private static readonly SignatureInformation[] ZipSignatureInfo = {
         new () { Position = 0, Signature = new byte [] { 0x50, 0x4b, 0x03, 0x04 } },

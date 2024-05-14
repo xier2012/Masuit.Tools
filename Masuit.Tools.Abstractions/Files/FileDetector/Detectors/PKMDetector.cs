@@ -3,12 +3,12 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Image)]
-internal class PKMDetector : AbstractSignatureDetector
+internal sealed class PKMDetector : AbstractSignatureDetector
 {
     private static readonly SignatureInformation[] PkmSignatureInfo = {
         new() { Position = 0, Signature = Encoding.ASCII.GetBytes ( "PKM 10" ) },

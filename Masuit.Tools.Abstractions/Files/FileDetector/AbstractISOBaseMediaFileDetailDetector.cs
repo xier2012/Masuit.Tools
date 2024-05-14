@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector;
 
@@ -21,16 +21,15 @@ public abstract class AbstractISOBaseMediaFileDetailDetector : IDetector
 
     public virtual bool Detect(Stream stream)
     {
-        using var reader = new BinaryReader(stream, Encoding.UTF8, true);
-        int offset = reader.ReadInt32();
-
+        var reader = new BinaryReader(stream, Encoding.UTF8, true);
+        _ = reader.ReadInt32();
         if (reader.ReadByte() == 0x66 && reader.ReadByte() == 0x74 && reader.ReadByte() == 0x79 && reader.ReadByte() == 0x70)
         {
             foreach (var ns in NextSignature)
             {
                 stream.Position = 8;
                 var readed = Encoding.GetEncoding("ascii").GetString(reader.ReadBytes(ns.Length), 0, ns.Length);
-                stream.Position = offset;
+                stream.Position = 0;
                 if (ns == readed)
                 {
                     return true;

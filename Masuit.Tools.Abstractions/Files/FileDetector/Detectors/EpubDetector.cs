@@ -4,12 +4,12 @@ using System.Linq;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Document)]
-internal class EpubDetector : AbstractZipDetailDetector
+internal sealed class EpubDetector : AbstractZipDetailDetector
 {
     public override IEnumerable<string> Files
     {
@@ -31,7 +31,7 @@ internal class EpubDetector : AbstractZipDetailDetector
     {
         if (filename == "mimetype")
         {
-            using Stream mimetypeStream = entry.Open();
+            var mimetypeStream = entry.Open();
             byte[] buffer = new byte["application/epub+zip".Length];
             if (mimetypeStream.Read(buffer, 0, buffer.Length) != buffer.Length)
             {

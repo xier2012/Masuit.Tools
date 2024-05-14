@@ -1,9 +1,9 @@
-﻿using System;
-using System.IO;
+﻿using Masuit.Tools.Systems;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Transforms;
+using System;
 
 namespace Masuit.Tools.Media
 {
@@ -73,12 +73,12 @@ namespace Masuit.Tools.Media
         /// <param name="mode">生成缩略图的方式</param>
         public static void MakeThumbnail(this Image originalImage, string thumbnailPath, int width, int height, ResizeMode mode)
         {
-            originalImage.Mutate(c => c.Resize(new ResizeOptions()
+            using var image = originalImage.Clone(c => c.Resize(new ResizeOptions()
             {
                 Size = new Size(width, height),
                 Mode = mode
             }));
-            originalImage.Save(thumbnailPath);
+            image.Save(thumbnailPath);
         }
 
         /// <summary>
@@ -90,12 +90,11 @@ namespace Masuit.Tools.Media
         /// <param name="mode">生成缩略图的方式</param>
         public static Image MakeThumbnail(this Image originalImage, int width, int height, ResizeMode mode)
         {
-            originalImage.Mutate(c => c.Resize(new ResizeOptions()
+            return originalImage.Clone(c => c.Resize(new ResizeOptions()
             {
                 Size = new Size(width, height),
                 Mode = mode
             }));
-            return originalImage;
         }
 
         #endregion 缩略图
@@ -337,7 +336,7 @@ namespace Masuit.Tools.Media
         {
             string strbase64 = source.Substring(source.IndexOf(',') + 1).Trim('\0');
             byte[] arr = Convert.FromBase64String(strbase64);
-            using var ms = new MemoryStream(arr);
+            var ms = new PooledMemoryStream(arr);
             return Image.Load(ms);
         }
     }

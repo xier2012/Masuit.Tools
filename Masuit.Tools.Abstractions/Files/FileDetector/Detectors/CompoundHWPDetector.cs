@@ -2,12 +2,12 @@
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Document)]
-internal class CompoundHWPDetector : AbstractCompoundFileDetailDetector
+internal sealed class CompoundHWPDetector : AbstractCompoundFileDetailDetector
 {
     public override IEnumerable<string> Chunks
     {

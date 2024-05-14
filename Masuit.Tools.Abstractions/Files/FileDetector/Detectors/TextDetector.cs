@@ -3,12 +3,12 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Document)]
-internal class TextDetector : IDetector
+internal sealed class TextDetector : IDetector
 {
     private static readonly byte[] SignatureBuffer = new byte[4];
     private static readonly char[] TextBuffer = new char[4096];

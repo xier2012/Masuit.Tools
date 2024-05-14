@@ -3,13 +3,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.System)]
 [FormatCategory(FormatCategory.Executable)]
-internal class DLLDetector : IDetector
+internal sealed class DLLDetector : IDetector
 {
     public string Precondition => "exe";
 

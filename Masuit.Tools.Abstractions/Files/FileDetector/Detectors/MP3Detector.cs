@@ -2,16 +2,16 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Audio)]
-internal class MP3Detector : AbstractSignatureDetector
+internal sealed class MP3Detector : AbstractSignatureDetector
 {
     private static readonly SignatureInformation[] Mp3SignatureInfo = {
         new () { Position = 0, Signature = new byte [] { 0xFF, 0xFB } },
-        new () { Position = 0, Signature = new byte [] { 0x49, 0x44, 0x33 } },
+        new () { Position = 0, Signature = "ID3"u8.ToArray() },
     };
 
     public override string Extension => "mp3";

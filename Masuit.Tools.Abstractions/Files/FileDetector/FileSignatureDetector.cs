@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Masuit.Tools.Systems;
 
 namespace Masuit.Tools.Files.FileDetector;
 
 public static class FileSignatureDetector
 {
-    private static List<IDetector> Detectors { get; set; } = new();
+    private static List<IDetector> Detectors { get; set; } = [];
 
     public static IReadOnlyList<IDetector> Registered => Detectors;
 
@@ -52,28 +53,36 @@ public static class FileSignatureDetector
 
     public static IDetector DetectFiletype(this Stream stream)
     {
-        string pre = null;
-        IDetector foundDetector = new NoneDetector();
-        while (true)
+        if (stream.CanSeek)
         {
-            bool found = false;
-            foreach (var detector in Detectors.Where(d => d.Precondition == pre))
+            string pre = null;
+            IDetector foundDetector = new NoneDetector();
+            while (true)
             {
-                stream.Position = 0;
-                if (detector.Detect(stream))
+                bool found = false;
+                foreach (var detector in Detectors.Where(d => d.Precondition == pre))
                 {
-                    found = true;
-                    foundDetector = detector;
-                    pre = detector.Extension;
+                    stream.Position = 0;
+                    if (detector.Detect(stream))
+                    {
+                        found = true;
+                        foundDetector = detector;
+                        pre = detector.Extension;
+                        break;
+                    }
+                }
+                if (!found)
+                {
                     break;
                 }
             }
-            if (!found)
-            {
-                break;
-            }
+
+            stream.Position = 0;
+            return foundDetector;
         }
 
-        return foundDetector;
+        using var ms = new PooledMemoryStream();
+        stream.CopyTo(ms);
+        return DetectFiletype(ms);
     }
 }

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Masuit.Tools;
 
 /// <summary>
-/// 
+///
 /// </summary>
 public static class IEnumerableExtensions
 {
@@ -66,13 +66,11 @@ public static class IEnumerableExtensions
     private static IEnumerable<TSource> IntersectByIterator<TSource, TKey>(IEnumerable<TSource> first, IEnumerable<TSource> second, Func<TSource, TKey> keySelector, IEqualityComparer<TKey> comparer)
     {
         var set = new HashSet<TKey>(second.Select(keySelector), comparer);
-        foreach (var source in first)
+        foreach (var item in first.Where(source => set.Remove(keySelector(source))))
         {
-            if (set.Remove(keySelector(source)))
-                yield return source;
+            yield return item;
         }
     }
-
 
     /// <summary>
     /// 多个集合取交集元素
@@ -151,8 +149,10 @@ public static class IEnumerableExtensions
     /// <returns></returns>
     public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
     {
-        var hash = new HashSet<TKey>();
-        return source.Where(p => hash.Add(keySelector(p)));
+        if (source == null) throw new ArgumentNullException(nameof(source));
+        if (keySelector == null) throw new ArgumentNullException(nameof(keySelector));
+        var set = new HashSet<TKey>();
+        return source.Where(item => set.Add(keySelector(item)));
     }
 
     /// <summary>
@@ -181,23 +181,16 @@ public static class IEnumerableExtensions
     /// <returns></returns>
     public static IEnumerable<TSource> IntersectBy<TSource, TKey>(this IEnumerable<TSource> first, IEnumerable<TKey> second, Func<TSource, TKey> keySelector, IEqualityComparer<TKey> comparer)
     {
-        if (first == null)
-            throw new ArgumentNullException(nameof(first));
-        if (second == null)
-            throw new ArgumentNullException(nameof(second));
-        if (keySelector == null)
-            throw new ArgumentNullException(nameof(keySelector));
+        if (first == null) throw new ArgumentNullException(nameof(first));
+        if (second == null) throw new ArgumentNullException(nameof(second));
+        if (keySelector == null) throw new ArgumentNullException(nameof(keySelector));
         return IntersectByIterator(first, second, keySelector, comparer);
     }
 
     private static IEnumerable<TSource> IntersectByIterator<TSource, TKey>(IEnumerable<TSource> first, IEnumerable<TKey> second, Func<TSource, TKey> keySelector, IEqualityComparer<TKey> comparer)
     {
         var set = new HashSet<TKey>(second, comparer);
-        foreach (var source in first)
-        {
-            if (set.Remove(keySelector(source)))
-                yield return source;
-        }
+        return first.Where(source => set.Remove(keySelector(source)));
     }
 
     /// <summary>
@@ -227,23 +220,16 @@ public static class IEnumerableExtensions
     /// <exception cref="ArgumentNullException"></exception>
     public static IEnumerable<TSource> ExceptBy<TSource, TKey>(this IEnumerable<TSource> first, IEnumerable<TKey> second, Func<TSource, TKey> keySelector, IEqualityComparer<TKey> comparer)
     {
-        if (first == null)
-            throw new ArgumentNullException(nameof(first));
-        if (second == null)
-            throw new ArgumentNullException(nameof(second));
-        if (keySelector == null)
-            throw new ArgumentNullException(nameof(keySelector));
+        if (first == null) throw new ArgumentNullException(nameof(first));
+        if (second == null) throw new ArgumentNullException(nameof(second));
+        if (keySelector == null) throw new ArgumentNullException(nameof(keySelector));
         return ExceptByIterator(first, second, keySelector, comparer);
     }
 
     private static IEnumerable<TSource> ExceptByIterator<TSource, TKey>(IEnumerable<TSource> first, IEnumerable<TKey> second, Func<TSource, TKey> keySelector, IEqualityComparer<TKey> comparer)
     {
         var set = new HashSet<TKey>(second, comparer);
-        foreach (var source in first)
-        {
-            if (set.Add(keySelector(source)))
-                yield return source;
-        }
+        return first.Where(source => set.Add(keySelector(source)));
     }
 
 #endif
@@ -313,12 +299,9 @@ public static class IEnumerableExtensions
     /// <param name="values"></param>
     public static void AddRangeIf<T>(this ICollection<T> @this, Func<T, bool> predicate, params T[] values)
     {
-        foreach (var obj in values)
+        foreach (var obj in values.Where(predicate))
         {
-            if (predicate(obj))
-            {
-                @this.Add(obj);
-            }
+            @this.Add(obj);
         }
     }
 
@@ -331,12 +314,9 @@ public static class IEnumerableExtensions
     /// <param name="values"></param>
     public static void AddRangeIf<T>(this ConcurrentBag<T> @this, Func<T, bool> predicate, params T[] values)
     {
-        foreach (var obj in values)
+        foreach (var obj in values.Where(predicate))
         {
-            if (predicate(obj))
-            {
-                @this.Add(obj);
-            }
+            @this.Add(obj);
         }
     }
 
@@ -349,12 +329,9 @@ public static class IEnumerableExtensions
     /// <param name="values"></param>
     public static void AddRangeIf<T>(this ConcurrentQueue<T> @this, Func<T, bool> predicate, params T[] values)
     {
-        foreach (var obj in values)
+        foreach (var obj in values.Where(predicate))
         {
-            if (predicate(obj))
-            {
-                @this.Enqueue(obj);
-            }
+            @this.Enqueue(obj);
         }
     }
 
@@ -398,19 +375,19 @@ public static class IEnumerableExtensions
     /// <param name="value">值</param>
     public static void InsertAfter<T>(this IList<T> list, Func<T, bool> condition, T value)
     {
-        foreach (var item in list.Select((item, index) => new
+        foreach (var index in list.Select((item, index) => new
         {
             item,
             index
-        }).Where(p => condition(p.item)).OrderByDescending(p => p.index))
+        }).Where(p => condition(p.item)).OrderByDescending(p => p.index).Select(t => t.index))
         {
-            if (item.index + 1 == list.Count)
+            if (index + 1 == list.Count)
             {
                 list.Add(value);
             }
             else
             {
-                list.Insert(item.index + 1, value);
+                list.Insert(index + 1, value);
             }
         }
     }
@@ -424,19 +401,19 @@ public static class IEnumerableExtensions
     /// <param name="value">值</param>
     public static void InsertAfter<T>(this IList<T> list, int index, T value)
     {
-        foreach (var item in list.Select((v, i) => new
+        foreach (var i in list.Select((v, i) => new
         {
             Value = v,
             Index = i
-        }).Where(p => p.Index == index).OrderByDescending(p => p.Index))
+        }).Where(p => p.Index == index).OrderByDescending(p => p.Index).Select(t => t.Index))
         {
-            if (item.Index + 1 == list.Count)
+            if (i + 1 == list.Count)
             {
                 list.Add(value);
             }
             else
             {
-                list.Insert(item.Index + 1, value);
+                list.Insert(i + 1, value);
             }
         }
     }
@@ -451,9 +428,7 @@ public static class IEnumerableExtensions
     /// <returns></returns>
     public static HashSet<TResult> ToHashSet<T, TResult>(this IEnumerable<T> source, Func<T, TResult> selector)
     {
-        var set = new HashSet<TResult>();
-        set.UnionWith(source.Select(selector));
-        return set;
+        return new HashSet<TResult>(source.Select(selector));
     }
 
     /// <summary>
@@ -864,7 +839,7 @@ public static class IEnumerableExtensions
     {
         double result = 0;
         var list = source as ICollection<double> ?? source.ToList();
-        int count = list.Count();
+        int count = list.Count;
         if (count > 1)
         {
             var avg = list.Average();

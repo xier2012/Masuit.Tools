@@ -2,15 +2,15 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Audio)]
-internal class FlacDetector : AbstractSignatureDetector
+internal sealed class FlacDetector : AbstractSignatureDetector
 {
     private static readonly SignatureInformation[] FlacSignatureInfo = {
-        new() { Position = 0, Signature = new byte [] { 0x66, 0x4C, 0x61, 0x43 } },
+        new() { Position = 0, Signature = "fLaC"u8.ToArray() },
     };
 
     public override string Extension => "flac";

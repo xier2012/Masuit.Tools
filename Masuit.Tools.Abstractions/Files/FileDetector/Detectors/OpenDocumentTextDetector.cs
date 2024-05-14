@@ -4,12 +4,12 @@ using System.Linq;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Document)]
-internal class OpenDocumentTextDetector : AbstractZipDetailDetector
+internal sealed class OpenDocumentTextDetector : AbstractZipDetailDetector
 {
     public override IEnumerable<string> Files
     {

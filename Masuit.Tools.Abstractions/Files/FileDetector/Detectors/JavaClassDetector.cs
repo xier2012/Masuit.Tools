@@ -2,12 +2,12 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Executable)]
-internal class JavaClassDetector : AbstractSignatureDetector
+internal sealed class JavaClassDetector : AbstractSignatureDetector
 {
     private static readonly SignatureInformation[] ClassSignatureInfo = {
         new() { Position = 0, Signature = new byte [] { 0xCA, 0xFE, 0xBA, 0xBE } },

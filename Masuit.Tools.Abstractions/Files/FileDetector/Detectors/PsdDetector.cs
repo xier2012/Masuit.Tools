@@ -2,15 +2,15 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Image)]
-internal class PsdDetector : AbstractSignatureDetector
+internal sealed class PsdDetector : AbstractSignatureDetector
 {
     private static readonly SignatureInformation[] PsdSignatureInfo = {
-        new() { Position = 0, Signature = new byte [] { 0x38, 0x42, 0x50, 0x53 } },
+        new() { Position = 0, Signature = "8BPS"u8.ToArray() },
     };
 
     public override string Extension => "psd";

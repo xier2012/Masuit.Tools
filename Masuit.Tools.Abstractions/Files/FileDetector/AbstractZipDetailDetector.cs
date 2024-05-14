@@ -3,7 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector;
 
@@ -28,17 +28,8 @@ public abstract class AbstractZipDetailDetector : IDetector
     {
         try
         {
-            using var archive = new ZipArchive(stream, ZipArchiveMode.Read, true);
-            foreach (string filename in Files)
-            {
-                bool succeed = archive.Entries.Any(entry => entry.FullName == filename && IsValid(filename, entry));
-                if (!succeed)
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            var archive = new ZipArchive(stream, ZipArchiveMode.Read, true);
+            return Files.Select(filename => archive.Entries.Any(entry => entry.FullName == filename && IsValid(filename, entry))).All(succeed => succeed);
         }
         catch
         {

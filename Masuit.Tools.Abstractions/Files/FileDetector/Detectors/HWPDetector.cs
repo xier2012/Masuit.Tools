@@ -3,12 +3,12 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Document)]
-internal class HWPDetector : AbstractRegexSignatureDetector
+internal sealed class HWPDetector : AbstractRegexSignatureDetector
 {
     public override string Extension => "hwp";
 

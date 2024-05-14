@@ -2,15 +2,15 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Audio)]
-internal class MidiDetector : AbstractSignatureDetector
+internal sealed class MidiDetector : AbstractSignatureDetector
 {
     private static readonly SignatureInformation[] MidiSignatureInfo = {
-        new() { Position = 0, Signature = new byte [] { 0x4D, 0x54, 0x68, 0x64 } },
+        new() { Position = 0, Signature = "MThd"u8.ToArray() },
     };
 
     public override string Extension => "mid";

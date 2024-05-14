@@ -2,14 +2,14 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Video)]
 [FormatCategory(FormatCategory.Audio)]
 [FormatCategory(FormatCategory.Image)]
-internal class MP4Detector : AbstractISOBaseMediaFileDetailDetector
+internal sealed class MP4Detector : AbstractISOBaseMediaFileDetailDetector
 {
     public override string Extension => "mp4";
 

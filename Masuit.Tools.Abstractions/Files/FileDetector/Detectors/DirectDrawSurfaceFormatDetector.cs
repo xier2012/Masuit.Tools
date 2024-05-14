@@ -2,15 +2,15 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Image)]
-internal class DirectDrawSurfaceFormatDetector : AbstractSignatureDetector
+internal sealed class DirectDrawSurfaceFormatDetector : AbstractSignatureDetector
 {
     private static readonly SignatureInformation[] DdsSignatureInfo = {
-        new() { Position = 0, Signature = new byte [] { 0x44, 0x44, 0x53, 0x20 } },
+        new() { Position = 0, Signature = "DDS "u8.ToArray() },
     };
 
     public override string Extension => "dds";

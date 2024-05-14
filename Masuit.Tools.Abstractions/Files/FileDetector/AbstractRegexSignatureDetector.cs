@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector;
 
@@ -36,7 +36,7 @@ public abstract class AbstractRegexSignatureDetector : IDetector
         foreach (var encoding in encodings)
         {
             stream.Position = 0;
-            using StreamReader reader = new StreamReader(stream, encoding, true, readBufferSize, true);
+            var reader = new StreamReader(stream, encoding, true, readBufferSize, true);
             reader.ReadBlock(buffer, 0, readBufferSize);
             if (Signature.IsMatch(new string(buffer)))
             {

@@ -2,12 +2,12 @@
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Executable)]
-internal class BashShellScriptDetector : AbstractRegexSignatureDetector
+internal sealed class BashShellScriptDetector : AbstractRegexSignatureDetector
 {
     public override string Precondition => "txt";
 

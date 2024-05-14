@@ -2,12 +2,12 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Archive)]
-internal class DMGDetector : AbstractSignatureDetector
+internal sealed class DMGDetector : AbstractSignatureDetector
 {
     private static readonly SignatureInformation[] DmgSignatureInfo = {
         new() { Position = 0, Signature = new byte [] { 0x78, 0x01, 0x73, 0x0D, 0x62, 0x62, 0x60 } },

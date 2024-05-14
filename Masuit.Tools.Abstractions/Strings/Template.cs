@@ -1,63 +1,99 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace Masuit.Tools.Strings
+namespace Masuit.Tools.Strings;
+
+/// <summary>
+/// 模版引擎
+/// </summary>
+public class Template
 {
+    private string Content { get; set; }
+
     /// <summary>
     /// 模版引擎
     /// </summary>
-    public class Template
+    /// <param name="content"></param>
+    public Template(string content)
     {
-        private string Content { get; set; }
+        Content = content;
+    }
 
-        /// <summary>
-        /// 模版引擎
-        /// </summary>
-        /// <param name="content"></param>
-        public Template(string content)
+    /// <summary>
+    /// 创建模板
+    /// </summary>
+    /// <param name="content"></param>
+    /// <returns></returns>
+    public static Template Create(string content)
+    {
+        return new Template(content);
+    }
+
+    /// <summary>
+    /// 设置变量
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    public Template Set(string key, string value)
+    {
+        Content = Content.Replace("{{" + key + "}}", value);
+        return this;
+    }
+
+    /// <summary>
+    /// 设置变量
+    /// </summary>
+    public Template Set(object obj)
+    {
+        var dic = obj.ToDictionary();
+        Set(dic);
+        return this;
+    }
+
+    /// <summary>
+    /// 设置变量
+    /// </summary>
+    public Template Set(Dictionary<string, string> dic)
+    {
+        foreach (var x in dic)
         {
-            Content = content;
+            Content = Content.Replace("{{" + x.Key + "}}", x.Value);
         }
 
-        /// <summary>
-        /// 创建模板
-        /// </summary>
-        /// <param name="content"></param>
-        /// <returns></returns>
-        public static Template Create(string content)
+        return this;
+    }
+
+    /// <summary>
+    /// 设置变量
+    /// </summary>
+    public Template Set(Dictionary<string, object> dic)
+    {
+        foreach (var x in dic)
         {
-            return new Template(content);
+            Content = Content.Replace("{{" + x.Key + "}}", x.Value.ToString());
         }
 
-        /// <summary>
-        /// 设置变量
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public Template Set(string key, string value)
-        {
-            Content = Content.Replace("{{" + key + "}}", value);
-            return this;
-        }
+        return this;
+    }
 
-        /// <summary>
-        /// 渲染模板
-        /// </summary>
-        /// <param name="check">是否检查未使用的模板变量</param>
-        /// <returns></returns>
-        public string Render(bool check = false)
+    /// <summary>
+    /// 渲染模板
+    /// </summary>
+    /// <param name="check">是否检查未使用的模板变量</param>
+    /// <returns></returns>
+    public string Render(bool check = false)
+    {
+        if (check)
         {
-            if (check)
+            var mc = Regex.Matches(Content, @"\{\{.+?\}\}");
+            foreach (Match m in mc)
             {
-                var mc = Regex.Matches(Content, @"\{\{.+?\}\}");
-                foreach (Match m in mc)
-                {
-                    throw new ArgumentException($"模版变量{m.Value}未被使用");
-                }
+                throw new ArgumentException($"模版变量{m.Value}未被使用");
             }
-
-            return Content;
         }
+
+        return Content;
     }
 }

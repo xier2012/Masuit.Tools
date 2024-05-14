@@ -10,7 +10,7 @@ namespace Masuit.Tools.RandomSelector
     /// <typeparam name="T"></typeparam>
     public class WeightedSelector<T> : IEnumerable<T>
     {
-        internal readonly List<WeightedItem<T>> Items = new List<WeightedItem<T>>();
+        internal readonly List<WeightedItem<T>> Items = [];
         internal readonly SelectorOption Option;
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Masuit.Tools.RandomSelector
             Option = option ?? new SelectorOption();
         }
 
-        public WeightedSelector(List<WeightedItem<T>> items, SelectorOption option = null) : this(option)
+        public WeightedSelector(IReadOnlyCollection<WeightedItem<T>> items, SelectorOption option = null) : this(option)
         {
             Add(items);
         }
@@ -103,7 +103,7 @@ namespace Masuit.Tools.RandomSelector
         /// <summary>
         /// 执行权重筛选，取多个元素
         /// </summary>
-        public List<T> SelectMultiple(int count)
+        public IEnumerable<T> SelectMultiple(int count)
         {
             CalculateCumulativeWeights();
             var selector = new MultipleSelector<T>(this);
@@ -145,6 +145,7 @@ namespace Masuit.Tools.RandomSelector
 
             return results;
         }
+
         public IEnumerator<T> GetEnumerator()
         {
             return Items.GetEnumerator() as IEnumerator<T>;

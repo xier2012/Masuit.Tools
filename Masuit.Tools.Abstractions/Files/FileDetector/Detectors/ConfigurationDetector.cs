@@ -3,12 +3,12 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Xml;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Document)]
-internal class ConfigurationDetector : IDetector
+internal sealed class ConfigurationDetector : IDetector
 {
     public string Precondition => "txt";
 
@@ -25,15 +25,9 @@ internal class ConfigurationDetector : IDetector
             var reader = XmlReader.Create(stream, new XmlReaderSettings()
             {
             });
-            if (reader.Read())
+            if (reader.Read() && reader.IsStartElement() && reader.Name == "configuration")
             {
-                if (reader.IsStartElement())
-                {
-                    if (reader.Name == "configuration")
-                    {
-                        return true;
-                    }
-                }
+                return true;
             }
         }
         catch

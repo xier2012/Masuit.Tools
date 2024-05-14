@@ -13,6 +13,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Masuit.Tools.Security;
 
 namespace Masuit.Tools
 {
@@ -73,7 +74,7 @@ namespace Masuit.Tools
         /// <param name="str"></param>
         /// <param name="base">进制</param>
         /// <returns></returns>
-        public static long FromBinary(this string str, byte @base)
+        public static long FromBase(this string str, byte @base)
         {
             var nf = new NumberFormater(@base);
             return nf.FromString(str);
@@ -85,7 +86,7 @@ namespace Masuit.Tools
         /// <param name="str"></param>
         /// <param name="base">进制</param>
         /// <returns></returns>
-        public static BigInteger FromBinaryBig(this string str, byte @base)
+        public static BigInteger FromBaseBig(this string str, byte @base)
         {
             var nf = new NumberFormater(@base);
             return nf.FromStringBig(str);
@@ -248,6 +249,16 @@ namespace Masuit.Tools
         }
 
         /// <summary>
+        /// 判断字符串不为空或""
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static bool NotNullOrEmpty(this string s)
+        {
+            return !string.IsNullOrWhiteSpace(s) && !s.Equals("null", StringComparison.CurrentCultureIgnoreCase);
+        }
+
+        /// <summary>
         /// 转成非null
         /// </summary>
         /// <param name="s"></param>
@@ -291,6 +302,7 @@ namespace Masuit.Tools
             {
                 return s;
             }
+
             s = s.Trim();
             string masks = mask.ToString().PadLeft(4, mask);
             return s.Length switch
@@ -329,7 +341,10 @@ namespace Masuit.Tools
                 {
                     if (t.IsCanceled || t.IsFaulted)
                     {
-                        return new[] { IPAddress.Loopback };
+                        return new[]
+                        {
+                            IPAddress.Loopback
+                        };
                     }
 
                     return t.Result;
@@ -450,9 +465,10 @@ namespace Masuit.Tools
              "41", "42", "43", "44", "45", "46",
              "50", "51", "52", "53", "54",
              "61", "62", "63", "64", "65",
-             "71",
-             "81", "82",
-             "91"
+            "71",
+            "81",
+            "82",
+            "91"
         };
 
         private static bool CheckChinaID18(string ID)
@@ -463,15 +479,18 @@ namespace Masuit.Tools
             {
                 return false;
             }
+
             if (!ChinaIDProvinceCodes.Contains(ID.Substring(0, 2)))
             {
                 return false;
             }
+
             CultureInfo zhCN = new CultureInfo("zh-CN", true);
             if (!DateTime.TryParseExact(ID.Substring(6, 8), "yyyyMMdd", zhCN, DateTimeStyles.None, out DateTime birthday))
             {
                 return false;
             }
+
             if (!birthday.In(new DateTime(1800, 1, 1), DateTime.Today))
             {
                 return false;
@@ -482,6 +501,7 @@ namespace Masuit.Tools
             {
                 sum += (ID[i] - '0') * factors[i];
             }
+
             int n = (12 - sum % 11) % 11;
             return n < 10 ? ID[17] - '0' == n : ID[17].Equals('X');
         }
@@ -493,15 +513,18 @@ namespace Masuit.Tools
             {
                 return false;
             }
+
             if (!ChinaIDProvinceCodes.Contains(ID.Substring(0, 2)))
             {
                 return false;
             }
+
             CultureInfo zhCN = new CultureInfo("zh-CN", true);
             if (!DateTime.TryParseExact("19" + ID.Substring(6, 6), "yyyyMMdd", zhCN, DateTimeStyles.None, out DateTime birthday))
             {
                 return false;
             }
+
             return birthday.In(new DateTime(1800, 1, 1), new DateTime(2000, 1, 1));
         }
 
@@ -617,7 +640,27 @@ namespace Masuit.Tools
         /// <returns>是否匹配成功</returns>
         public static bool MatchPhoneNumber(this string s)
         {
-            return !string.IsNullOrEmpty(s) && s[0] == '1' && (s[1] > '2' || s[1] <= '9');
+            return !string.IsNullOrEmpty(s) && s.Length == 11 && s[0] == '1' && (s[1] > '2' || s[1] <= '9') && long.TryParse(s, out _);
+        }
+
+        /// <summary>
+        /// 匹配固话号码
+        /// </summary>
+        /// <param name="s">源字符串</param>
+        /// <returns>是否匹配成功</returns>
+        public static bool MatchLandline(this string s)
+        {
+            return Regex.IsMatch(s, @"^0\d{2,3}(?:-?\d{8}|-?\d{7})$");
+        }
+
+        /// <summary>
+        /// 匹配企业的统一社会信用代码
+        /// </summary>
+        /// <param name="s">源字符串</param>
+        /// <returns>是否匹配成功</returns>
+        public static bool MatchUSCC(this string s)
+        {
+            return Regex.IsMatch(s, @"^([0-9A-HJ-NPQRTUWXY]{2}\d{6}[0-9A-HJ-NPQRTUWXY]{10}|[1-9]\d{14})$");
         }
 
         #endregion 校验手机号码的正确性
@@ -640,11 +683,13 @@ namespace Masuit.Tools
                     {
                         return true;
                     }
+
                     break;
 
                 case UriHostNameType.IPv4:
                     return !IPAddress.Parse(uri.DnsSafeHost).IsPrivateIP();
             }
+
             return false;
         }
 
@@ -669,7 +714,8 @@ namespace Masuit.Tools
         /// <returns></returns>
         public static string Crc32(this string s)
         {
-            return string.Join(string.Empty, new Security.Crc32().ComputeHash(Encoding.UTF8.GetBytes(s)).Select(b => b.ToString("x2")));
+            using var crc32 = new Crc32();
+            return string.Join(string.Empty, crc32.ComputeHash(Encoding.UTF8.GetBytes(s)).Select(b => b.ToString("x2")));
         }
 
         /// <summary>
@@ -679,7 +725,8 @@ namespace Masuit.Tools
         /// <returns></returns>
         public static string Crc64(this string s)
         {
-            return string.Join(string.Empty, new Security.Crc64().ComputeHash(Encoding.UTF8.GetBytes(s)).Select(b => b.ToString("x2")));
+            using var crc64 = new Crc64();
+            return string.Join(string.Empty, crc64.ComputeHash(Encoding.UTF8.GetBytes(s)).Select(b => b.ToString("x2")));
         }
 
         #endregion Crc32
@@ -697,7 +744,7 @@ namespace Masuit.Tools
         /// <returns>是否匹配成功</returns>
         public static bool MatchCNPatentNumber(this string patnum)
         {
-            Regex patnumWithCheckbitPattern = new Regex(@"^
+            var patnumWithCheckbitPattern = new Regex(@"^
 (?<!\d)
 (?<patentnum>
     (?<basenum>
@@ -714,36 +761,31 @@ namespace Masuit.Tools
 )
 (?!\d)
 $", RegexOptions.IgnorePatternWhitespace | RegexOptions.IgnoreCase | RegexOptions.Multiline);
-            Match m = patnumWithCheckbitPattern.Match(patnum);
+            var m = patnumWithCheckbitPattern.Match(patnum);
             if (!m.Success)
             {
                 return false;
             }
+
             bool isPatnumTrue = true;
             patnum = patnum.ToUpper().Replace(".", "");
             if (patnum.Length == 9 || patnum.Length == 8)
             {
-                byte[] factors8 = new byte[] { 2, 3, 4, 5, 6, 7, 8, 9 };
+                byte[] factors8 = { 2, 3, 4, 5, 6, 7, 8, 9 };
                 int year = Convert.ToUInt16(patnum.Substring(0, 2));
-                year += (year >= 85) ? (ushort)1900u : (ushort)2000u;
-                if (year >= 1985 || year <= 2003)
+                year += year >= 85 ? (ushort)1900u : (ushort)2000u;
+                if (year is >= 1985 or <= 2003)
                 {
                     int sum = 0;
                     for (byte i = 0; i < 8; i++)
                     {
                         sum += factors8[i] * (patnum[i] - '0');
                     }
+
                     char checkbit = "0123456789X"[sum % 11];
-                    if (patnum.Length == 9)
+                    if (patnum.Length == 9 && checkbit != patnum[8])
                     {
-                        if (checkbit != patnum[8])
-                        {
-                            isPatnumTrue = false;
-                        }
-                    }
-                    else
-                    {
-                        patnum += checkbit;
+                        isPatnumTrue = false;
                     }
                 }
                 else
@@ -751,9 +793,9 @@ $", RegexOptions.IgnorePatternWhitespace | RegexOptions.IgnoreCase | RegexOption
                     isPatnumTrue = false;
                 }
             }
-            else if (patnum.Length == 13 || patnum.Length == 12)
+            else if (patnum.Length is 13 or 12)
             {
-                byte[] factors12 = new byte[12] { 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5 };
+                byte[] factors12 = { 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5 };
                 int year = Convert.ToUInt16(patnum.Substring(0, 4));
                 if (year >= 2003 && year <= DateTime.Now.Year)
                 {
@@ -762,6 +804,7 @@ $", RegexOptions.IgnorePatternWhitespace | RegexOptions.IgnoreCase | RegexOption
                     {
                         sum += factors12[i] * (patnum[i] - '0');
                     }
+
                     char checkbit = "0123456789X"[sum % 11];
                     if (patnum.Length == 13)
                     {
@@ -784,6 +827,7 @@ $", RegexOptions.IgnorePatternWhitespace | RegexOptions.IgnoreCase | RegexOption
             {
                 isPatnumTrue = false;
             }
+
             return isPatnumTrue;
         }
 
@@ -807,5 +851,99 @@ $", RegexOptions.IgnorePatternWhitespace | RegexOptions.IgnoreCase | RegexOption
         /// <param name="that"></param>
         /// <returns></returns>
         public static int HammingDistance(this string @this, string that) => new SimHash(@this).HammingDistance(new SimHash(that));
+
+        /// <summary>
+        /// 匹配字符串是否包含emoji字符
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static bool MatchEmoji(this string s)
+        {
+            return Regex.IsMatch(s, @"(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])");
+        }
+
+        /// <summary>
+        /// 获取字符串的字符数
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static int CharacterCount(this string str)
+        {
+            var enumerator = StringInfo.GetTextElementEnumerator(str);
+            int length = 0;
+            while (enumerator.MoveNext())
+            {
+                length++;
+            }
+
+            return length;
+        }
+
+        /// <summary>
+        /// 获取字符串的字节数
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static int BytesCount(this string str)
+        {
+            return Encoding.UTF8.GetByteCount(str);
+        }
+
+        /// <summary>
+        /// 转半角(DBC case)
+        /// </summary>
+        /// <param name="input">任意字符串</param>
+        /// <returns>半角字符串</returns>
+        ///<remarks>
+        ///全角空格为12288，半角空格为32(此处不必转空格)
+        ///其他字符半角(33-126)与全角(65281-65374)的对应关系是：均相差65248
+        ///</remarks>
+        public static string ToDBC(this string input)
+        {
+            char[] c = input.ToCharArray();
+            for (int i = 0; i < c.Length; i++)
+            {
+                if (c[i] == 12288)
+                {
+                    c[i] = (char)32;
+                    continue;
+                }
+
+                if (c[i] > 65280 && c[i] < 65375)
+                {
+                    c[i] = (char)(c[i] - 65248);
+                }
+            }
+
+            return new string(c);
+        }
+
+        /// <summary>
+        /// 转全角(SBC case)
+        /// </summary>
+        /// <param name="input">任意字符串</param>
+        /// <returns>全角字符串</returns>
+        ///<remarks>
+        ///全角空格为12288，半角空格为32
+        ///其他字符半角(33-126)与全角(65281-65374)的对应关系是：均相差65248
+        ///</remarks>
+        public static string ToSBC(this string input)
+        {
+            //半角转全角：
+            var c = input.ToCharArray();
+            for (int i = 0; i < c.Length; i++)
+            {
+                if (c[i] == 32)
+                {
+                    c[i] = (char)12288;
+                    continue;
+                }
+                if (c[i] < 127 && c[i] > 32)
+                {
+                    c[i] = (char)(c[i] + 65248);
+                }
+            }
+            return new string(c);
+        }
     }
 }

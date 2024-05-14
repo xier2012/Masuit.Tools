@@ -1,12 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>netstandard2.0;netstandard2.1;net5;net6;net7</TargetFrameworks>
-        <Description>包含一些常用的操作类，大都是静态类，加密解密，反射操作，Excel简单导出，权重随机筛选算法，分布式短id，表达式树，linq扩展，文件压缩，多线程下载和FTP客户端，硬件信息，字符串扩展方法，日期时间扩展操作，中国农历，大文件拷贝，图像裁剪，验证码，断点续传，集合扩展等常用封装。
-官网教程：https://ldqk.org/55
+        <TargetFrameworks>netstandard2.0;netstandard2.1;net5;net6;net7;net8</TargetFrameworks>
+        <Description>全龄段友好的C#万能工具库，码数吐司库(适用于.NET Core项目)，不管你是菜鸟新手还是骨灰级玩家都能轻松上手，包含一些常用的操作类，大都是静态类，加密解密，反射操作，权重随机筛选算法，分布式短id，表达式树，linq扩展，文件压缩，多线程下载和FTP客户端，硬件信息，字符串扩展方法，日期时间扩展操作，中国农历，大文件拷贝，图像裁剪，验证码，断点续传，集合扩展等常用封装。
+官网教程：https://tools.masuit.org
 github：https://github.com/ldqk/Masuit.Tools
         </Description>
-        <Version>2.5.8.2</Version>
         <Copyright>Copyright © 懒得勤快</Copyright>
         <PackageProjectUrl>https://github.com/ldqk/Masuit.Tools</PackageProjectUrl>
         <PackageTags>Masuit.Tools,工具库,Utility,Crypt,Extensions</PackageTags>
@@ -21,9 +20,9 @@ github：https://github.com/ldqk/Masuit.Tools
         <UserSecretsId>830c282f-f7c1-42be-8651-4cd06ac8e73f</UserSecretsId>
         <RepositoryType></RepositoryType>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-        <FileVersion>$(Version)</FileVersion>
+        <FileVersion>2.5.9.1</FileVersion>
         <Company>masuit.org</Company>
-        <AssemblyVersion>$(Version)</AssemblyVersion>
+        <AssemblyVersion>2.5.9</AssemblyVersion>
         <Authors>懒得勤快</Authors>
         <RepositoryUrl>https://github.com/ldqk/Masuit.Tools</RepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -32,29 +31,30 @@ github：https://github.com/ldqk/Masuit.Tools
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <Title>Masuit.Tools</Title>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FastExpressionCompiler" Version="3.3.3" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
-        <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.1.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="[2.2.6]" />
     </ItemGroup>
     <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1'">
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.9" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="[3.1.32]" />
     </ItemGroup>
     <ItemGroup Condition=" '$(TargetFramework)' == 'net5'">
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.11" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="[5.0.17]" />
     </ItemGroup>
     <ItemGroup Condition=" '$(TargetFramework)' == 'net6'">
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.10" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="[6.0.26]" />
     </ItemGroup>
     <ItemGroup Condition=" '$(TargetFramework)' == 'net7'">
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.15" />
+    </ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net8'">
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4" />
     </ItemGroup>
     <ItemGroup>
       <Compile Remove="..\Masuit.Tools.Abstractions\Mapping\**" />

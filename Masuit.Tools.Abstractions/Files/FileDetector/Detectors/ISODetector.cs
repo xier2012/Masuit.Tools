@@ -2,15 +2,15 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Archive)]
-internal class ISODetector : AbstractSignatureDetector
+internal sealed class ISODetector : AbstractSignatureDetector
 {
     private static readonly SignatureInformation[] IsoSignatureInfo = {
-        new() { Position = 0, Signature = new byte [] { 0x43, 0x44, 0x30, 0x30, 0x31 } },
+        new() { Position = 0, Signature = "CD001"u8.ToArray() },
     };
 
     public override string Extension => "iso";

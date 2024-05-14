@@ -2,15 +2,15 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Masuit.Tools.AspNetCore.Mime;
+using Masuit.Tools.Mime;
 
 namespace Masuit.Tools.Files.FileDetector.Detectors;
 
 [FormatCategory(FormatCategory.Compression)]
-internal class LzhDetector : AbstractSignatureDetector
+internal sealed class LzhDetector : AbstractSignatureDetector
 {
     private static readonly SignatureInformation[] LzhSignatureInfo = {
-        new() { Position = 2, Signature = new byte [] { 0x2D, 0x6C, 0x68 } },
+        new() { Position = 2, Signature = "-lh"u8.ToArray() },
     };
 
     public override string Extension => "lzh";
